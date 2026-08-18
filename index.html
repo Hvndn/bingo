@@ -213,7 +213,7 @@
                     </div>
                 </div>
 
-                <!-- B-I-N-G-O Line Score Trackers -->
+                <!-- B-I-N-G-O Line Score Trackers (Hidden Opponent Progress for Suspense) -->
                 <div class="bingo-score-board glass-panel">
                     <!-- Player 1 Bingo Tracker -->
                     <div class="bingo-tracker p1-tracker">
@@ -228,20 +228,10 @@
                         <span class="count-badge" id="p1-line-count">0/5</span>
                     </div>
 
-                    <div class="vs-divider">VS</div>
-
-                    <!-- Player 2 Bingo Tracker -->
-                    <div class="bingo-tracker p2-tracker">
-                        <span class="tracker-label">Đối thủ:</span>
-                        <div class="bingo-letters" id="p2-bingo-letters">
-                            <span class="letter" data-letter="B">B</span>
-                            <span class="letter" data-letter="I">I</span>
-                            <span class="letter" data-letter="N">N</span>
-                            <span class="letter" data-letter="G">G</span>
-                            <span class="letter" data-letter="O">O</span>
-                        </div>
-                        <span class="count-badge" id="p2-line-count">0/5</span>
-                    </div>
+                    <!-- Claim Bingo Victory Button -->
+                    <button id="btn-call-bingo" class="btn btn-bingo-claim hidden" disabled>
+                        <i class="fa-solid fa-trophy"></i> 🎉 BINGO!
+                    </button>
                 </div>
 
                 <!-- Manual Number Call Bar -->

@@ -49,9 +49,8 @@ document.addEventListener('DOMContentLoaded', () => {
         turnText: document.getElementById('turn-text'),
         
         p1BingoLetters: document.getElementById('p1-bingo-letters'),
-        p2BingoLetters: document.getElementById('p2-bingo-letters'),
         p1LineCount: document.getElementById('p1-line-count'),
-        p2LineCount: document.getElementById('p2-line-count'),
+        btnCallBingo: document.getElementById('btn-call-bingo'),
         
         gameplayBoard: document.getElementById('gameplay-board'),
         linesSvg: document.getElementById('lines-svg'),
@@ -282,6 +281,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.key === 'Enter') {
                 submitManualCallNumber();
             }
+        });
+
+        // Claim Bingo Victory Button
+        elements.btnCallBingo.addEventListener('click', () => {
+            claimBingoVictory();
         });
 
         // Setup Board Controls
@@ -544,7 +548,32 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Execute Number Marking & Win Evaluation
+    // Claim Bingo Victory
+    function claimBingoVictory() {
+        if (bingoEngine.gameOver) return;
+
+        const p1Lines = bingoEngine.checkCompletedLines(bingoEngine.myBoard).length;
+        if (p1Lines < 5) {
+            showToast('Chưa đủ 5 hàng Bingo để xướng thắng!');
+            return;
+        }
+
+        bingoEngine.gameOver = true;
+        const p2Lines = (bingoEngine.mode === 'ai' || bingoEngine.mode === 'local') 
+            ? bingoEngine.checkCompletedLines(bingoEngine.oppBoard).length 
+            : 0;
+
+        if (bingoEngine.mode === 'online') {
+            peerManager.sendData({
+                type: 'BINGO_CLAIM',
+                payload: { role: bingoEngine.myRole }
+            });
+        }
+
+        showGameOverModal('my_win', p1Lines, p2Lines);
+    }
+
+    // Execute Number Marking
     function executeMove(number) {
         soundEngine.playMarkNumber();
 
@@ -553,26 +582,23 @@ document.addEventListener('DOMContentLoaded', () => {
         updateScoreTrackers();
         drawBingoLines();
 
-        // Check Win Condition
-        const p1Lines = bingoEngine.checkCompletedLines(bingoEngine.myBoard).length;
-        const p2Lines = (bingoEngine.mode === 'ai' || bingoEngine.mode === 'local') 
-            ? bingoEngine.checkCompletedLines(bingoEngine.oppBoard).length 
-            : 0;
-
         // Sound effect on line complete
+        const p1Lines = bingoEngine.checkCompletedLines(bingoEngine.myBoard).length;
         if (p1Lines > 0 && p1Lines > (this.lastP1Lines || 0)) {
             soundEngine.playLineComplete();
         }
         this.lastP1Lines = p1Lines;
 
-        const winResult = bingoEngine.checkWinCondition(p1Lines, p2Lines);
-
-        if (winResult) {
-            bingoEngine.gameOver = true;
-            setTimeout(() => {
-                showGameOverModal(winResult, p1Lines, p2Lines);
-            }, 600);
-            return;
+        // In AI Mode, check if Bot completed 5 lines
+        if (bingoEngine.mode === 'ai') {
+            const botLines = bingoEngine.checkCompletedLines(bingoEngine.oppBoard).length;
+            if (botLines >= 5 && !bingoEngine.gameOver) {
+                bingoEngine.gameOver = true;
+                setTimeout(() => {
+                    showGameOverModal('opp_win', p1Lines, botLines);
+                }, 800);
+                return;
+            }
         }
 
         // Switch Turn
@@ -636,7 +662,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Update B-I-N-G-O Letter Trackers
+    // Update B-I-N-G-O Letter Trackers & Unlock Claim Button
     function updateScoreTrackers() {
         const p1Lines = bingoEngine.checkCompletedLines(bingoEngine.myBoard).length;
         const p1ActiveLetters = bingoEngine.getBingoLetters(p1Lines);
@@ -652,22 +678,18 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Opponent Tracker
-        const p2Lines = (bingoEngine.mode === 'ai' || bingoEngine.mode === 'local') 
-            ? bingoEngine.checkCompletedLines(bingoEngine.oppBoard).length 
-            : (this.oppOnlineLineCount || 0);
-
-        const p2ActiveLetters = bingoEngine.getBingoLetters(p2Lines);
-        elements.p2LineCount.innerText = `${p2Lines}/5`;
-        const p2LetterSpans = elements.p2BingoLetters.querySelectorAll('.letter');
-        p2LetterSpans.forEach(span => {
-            const letter = span.dataset.letter;
-            if (p2ActiveLetters.includes(letter)) {
-                span.classList.add('active');
-            } else {
-                span.classList.remove('active');
+        // Unlock BINGO Claim Button if >= 5 lines achieved
+        if (p1Lines >= 5 && !bingoEngine.gameOver) {
+            if (elements.btnCallBingo.classList.contains('hidden')) {
+                soundEngine.playReady();
+                showToast('🎉 BẠN ĐÃ ĐỦ 5 HÀNG BINGO! BẤM NÚT BINGO ĐỂ CHIẾN THẮNG!');
             }
-        });
+            elements.btnCallBingo.classList.remove('hidden');
+            elements.btnCallBingo.disabled = false;
+        } else if (p1Lines < 5) {
+            elements.btnCallBingo.classList.add('hidden');
+            elements.btnCallBingo.disabled = true;
+        }
     }
 
     // Handle incoming P2P data packets
@@ -682,6 +704,11 @@ document.addEventListener('DOMContentLoaded', () => {
             checkBothReadyToStart();
         } else if (type === 'SELECT_NUMBER') {
             executeMove(payload.number);
+        } else if (type === 'BINGO_CLAIM') {
+            bingoEngine.gameOver = true;
+            soundEngine.playLose();
+            const p1Lines = bingoEngine.checkCompletedLines(bingoEngine.myBoard).length;
+            showGameOverModal('opp_win', p1Lines, 5);
         } else if (type === 'EMOTE') {
             soundEngine.playEmote();
             spawnFloatingEmote(payload.emote, false);
