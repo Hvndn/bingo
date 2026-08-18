@@ -111,8 +111,14 @@ class PeerManager {
         });
 
         this.peer.on('disconnected', () => {
-            console.warn('Peer disconnected from server');
-            this.updateStatus('DISCONNECTED', 'Mất kết nối với máy chủ!');
+            console.warn('Peer disconnected from signaling server, attempting automatic reconnect...');
+            if (this.peer && !this.peer.destroyed) {
+                try {
+                    this.peer.reconnect();
+                } catch (e) {
+                    console.error('Reconnect error:', e);
+                }
+            }
         });
     }
 

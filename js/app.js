@@ -999,7 +999,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         prepareSetupBoard();
                     }
                 }, 800);
-            } else if (status.state === 'CLOSED' || status.state === 'DISCONNECTED') {
+            } else if (status.state === 'CLOSED') {
                 showToast(status.message);
                 if (bingoEngine.gameStarted && !bingoEngine.gameOver) {
                     showGameOverModal('opp_disconnect', 'Đối thủ đã thoát phòng!');
