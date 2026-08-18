@@ -192,10 +192,12 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
-    font-family: var(--font-heading);
-    font-weight: 900;
-    font-size: 1.25rem;
-    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: var(--transition-bounce);
+}
+
+.logo:hover {
+    transform: scale(1.05);
 }
 
 .logo-icon {

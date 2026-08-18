@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
         viewGameplay: document.getElementById('view-gameplay'),
 
         // Header
+        appLogo: document.getElementById('app-logo'),
         btnHistory: document.getElementById('btn-history'),
         btnTheme: document.getElementById('btn-theme'),
         btnSound: document.getElementById('btn-sound'),
@@ -209,6 +210,30 @@ document.addEventListener('DOMContentLoaded', () => {
                     showToast('Đã chọn Trò 1: Neon Bingo');
                 }
             });
+        });
+
+        // Logo Click to Return to Lobby
+        elements.appLogo.addEventListener('click', () => {
+            soundEngine.playClick();
+            if (bingoEngine.gameStarted && !bingoEngine.gameOver) {
+                if (confirm('Bạn đang trong trận đấu! Bạn có chắc chắn muốn rời bàn đấu để về Trang Chủ không?')) {
+                    if (bingoEngine.mode === 'online') peerManager.disconnect();
+                    showView('lobby');
+                    showToast('Đã quay về Trang Chủ');
+                }
+            } else if (mathGameEngine.gameStarted && !mathGameEngine.gameOver) {
+                if (confirm('Bạn đang trong ván đố số! Bạn có chắc chắn muốn rời bàn đấu để về Trang Chủ không?')) {
+                    if (mathGameEngine.timerInterval) clearInterval(mathGameEngine.timerInterval);
+                    if (mathGameEngine.mode === 'online') peerManager.disconnect();
+                    showView('lobby');
+                    showToast('Đã quay về Trang Chủ');
+                }
+            } else {
+                if (bingoEngine.mode === 'online' || mathGameEngine.mode === 'online') {
+                    peerManager.disconnect();
+                }
+                showView('lobby');
+            }
         });
 
         // Sound & Theme & Rules & History
@@ -618,6 +643,36 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
             }
         }
+    }
+
+    // Countdown Timer Loop for Game 2
+    function startMathTimerLoop() {
+        if (mathGameEngine.timerInterval) {
+            clearInterval(mathGameEngine.timerInterval);
+        }
+
+        mathGameEngine.timerInterval = setInterval(() => {
+            if (!mathGameEngine.gameStarted || mathGameEngine.gameOver || mathGameEngine.currentPhase !== 'FIND') {
+                return;
+            }
+
+            if (mathGameEngine.currentDefender === 'p1') {
+                mathGameEngine.p1TimeLeft--;
+            } else {
+                mathGameEngine.p2TimeLeft--;
+            }
+
+            elements.p1TimerText.innerText = `${mathGameEngine.p1TimeLeft}s`;
+            elements.p2TimerText.innerText = `${mathGameEngine.p2TimeLeft}s`;
+
+            // Check Win/Loss by Time Expiration
+            const winRes = mathGameEngine.checkWinCondition();
+            if (winRes) {
+                clearInterval(mathGameEngine.timerInterval);
+                mathGameEngine.gameOver = true;
+                showGameOverModal(winRes, mathGameEngine.p1Score, mathGameEngine.p2Score);
+            }
+        }, 1000);
     }
 
     // Render Quick Matrix 1-100 Modal (Luật 3)
