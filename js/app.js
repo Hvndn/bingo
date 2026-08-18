@@ -75,6 +75,13 @@ document.addEventListener('DOMContentLoaded', () => {
         modalRules: document.getElementById('modal-rules'),
         btnCloseRules: document.getElementById('btn-close-rules'),
 
+        // History Modal
+        modalHistory: document.getElementById('modal-history'),
+        btnCloseHistory: document.getElementById('btn-close-history'),
+        historyList: document.getElementById('history-list'),
+        histStatTotal: document.getElementById('hist-stat-total'),
+        histStatWins: document.getElementById('hist-stat-wins'),
+
         // Game Switcher Tabs
         gameSwitcherBtns: document.querySelectorAll('.game-switcher-btn'),
 
