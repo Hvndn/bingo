@@ -23,14 +23,13 @@ class PeerManager {
         for (let i = 0; i < 6; i++) {
             code += Math.floor(Math.random() * 10).toString();
         }
-        // Ensure no leading zero
         if (code[0] === '0') code = '1' + code.slice(1);
         return code;
     }
 
-    // Format full PeerJS ID prefix
+    // Format full PeerJS Peer ID from room code
     getFullPeerId(code) {
-        return `neon-bingo-v1-${code.trim().toUpperCase()}`;
+        return `nbingo-${code.trim()}`;
     }
 
     // Initialize Host Peer & Create Room
@@ -45,20 +44,23 @@ class PeerManager {
         });
     }
 
-    // Join Existing Room Code
+    // Join Existing Room
     joinRoom(code, onConnected) {
         this.isHost = false;
-        this.roomCode = code.trim().toUpperCase();
+        this.roomCode = code.trim();
         const hostFullId = this.getFullPeerId(this.roomCode);
 
-        // Generate temporary client peer ID
-        const clientTempId = `neon-bingo-client-${Math.random().toString(36).substr(2, 6)}`;
+        // Use unique random guest ID to avoid conflict
+        const guestId = `nbingo-guest-${Date.now()}-${Math.floor(Math.random() * 9999)}`;
 
-        this.initPeer(clientTempId, () => {
+        this.initPeer(guestId, () => {
             this.updateStatus('CONNECTING', 'Đang kết nối tới phòng...');
             
             try {
-                const conn = this.peer.connect(hostFullId, { reliable: true });
+                const conn = this.peer.connect(hostFullId, {
+                    reliable: true,
+                    serialization: 'json'
+                });
                 this.setupConnection(conn, onConnected);
             } catch (err) {
                 console.error('Peer connect error:', err);
@@ -67,67 +69,69 @@ class PeerManager {
         });
     }
 
-    // Initialize PeerJS Object with Local/Cloud Server Option
+    // Initialize PeerJS - use local embedded server on localhost, cloud otherwise
     initPeer(id, onOpen) {
+        // Destroy old peer first
         if (this.peer) {
-            try {
-                this.peer.destroy();
-            } catch (e) {}
+            try { this.peer.destroy(); } catch (e) {}
+            this.peer = null;
         }
 
-        const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-        let peerOpts = {
-            debug: 1,
-            config: {
-                iceServers: [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:stun1.l.google.com:19302' },
-                    { urls: 'stun:stun2.l.google.com:19302' }
-                ]
-            }
+        const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+
+        const config = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ]
         };
 
-        if (isLocalhost) {
-            peerOpts.host = location.hostname;
-            peerOpts.port = location.port || 3000;
-            peerOpts.path = '/peerjs/myapp';
-        }
+        let peerOpts = { debug: 2, config };
 
+        if (isLocal) {
+            // Use embedded PeerServer on the same Node.js port
+            peerOpts.host = 'localhost';
+            peerOpts.port = parseInt(location.port) || 3000;
+            peerOpts.path = '/peerjs/myapp';
+            peerOpts.secure = false;
+        }
+        // On non-localhost (Render, etc.) use PeerJS cloud server (default - no host/port needed)
+
+        console.log(`[PeerJS] Initializing with ID: ${id}, local: ${isLocal}`);
         this.peer = new Peer(id, peerOpts);
 
         this.peer.on('open', (assignedId) => {
             this.peerId = assignedId;
-            console.log('Peer initialized with ID:', assignedId);
+            console.log('[PeerJS] Peer open, ID:', assignedId);
             if (onOpen) onOpen(assignedId);
         });
 
-        // Host listens for incoming guest connection
+        // Host listens for incoming connections
         this.peer.on('connection', (conn) => {
             if (this.isHost) {
-                console.log('Guest connecting:', conn.peer);
+                console.log('[PeerJS] Guest connecting:', conn.peer);
                 this.setupConnection(conn);
             }
         });
 
         this.peer.on('error', (err) => {
-            console.error('PeerJS error:', err.type, err);
+            console.error('[PeerJS] Error:', err.type, err.message);
             let errMsg = 'Lỗi kết nối mạng!';
             if (err.type === 'peer-unavailable') {
-                errMsg = 'Không tìm thấy phòng với mã này. Hãy kiểm tra lại mã!';
+                errMsg = 'Không tìm thấy phòng này. Kiểm tra lại mã phòng!';
             } else if (err.type === 'unavailable-id') {
-                errMsg = 'Mã phòng đang trùng lặp. Đang tạo mã mới...';
+                errMsg = 'Mã phòng bị trùng. Đang tạo mã mới...';
+            } else if (err.type === 'network' || err.type === 'server-error') {
+                errMsg = 'Lỗi máy chủ kết nối. Thử lại sau!';
             }
             this.handleError(errMsg);
         });
 
         this.peer.on('disconnected', () => {
-            console.warn('Peer disconnected from signaling server, attempting automatic reconnect...');
-            if (this.peer && !this.peer.destroyed) {
-                try {
-                    this.peer.reconnect();
-                } catch (e) {
-                    console.error('Reconnect error:', e);
-                }
+            console.warn('[PeerJS] Disconnected from signaling server, reconnecting...');
+            // Only reconnect if we still have an active connection (don't reconnect if user left)
+            if (this.peer && !this.peer.destroyed && this.isConnected) {
+                try { this.peer.reconnect(); } catch (e) { console.error('Reconnect error:', e); }
             }
         });
     }
@@ -138,17 +142,17 @@ class PeerManager {
 
         this.conn.on('open', () => {
             this.isConnected = true;
-            console.log('P2P Data Channel Connected!');
+            console.log('[PeerJS] Data channel open!');
             this.updateStatus('CONNECTED', 'Đã kết nối thành công với đối thủ!');
 
             if (onConnected) onConnected();
 
-            // Send handshake packet from both host & guest to trigger auto-transition
+            // Both sides send handshake to trigger UI transition
             this.sendData({ type: 'HANDSHAKE', payload: { role: this.isHost ? 'HOST' : 'GUEST' } });
         });
 
         this.conn.on('data', (data) => {
-            console.log('Received P2P Data:', data);
+            console.log('[PeerJS] Received:', data.type);
             if (this.onDataReceived) {
                 this.onDataReceived(data);
             }
@@ -156,36 +160,36 @@ class PeerManager {
 
         this.conn.on('close', () => {
             this.isConnected = false;
-            console.warn('P2P connection closed');
+            console.warn('[PeerJS] Connection closed');
             this.updateStatus('CLOSED', 'Đối thủ đã ngắt kết nối!');
         });
 
         this.conn.on('error', (err) => {
-            console.error('Connection error:', err);
+            console.error('[PeerJS] Connection error:', err);
             this.handleError('Lỗi gián đoạn kênh truyền dữ liệu!');
         });
     }
 
-    // Send payload to connected peer
+    // Send data to connected peer
     sendData(data) {
         if (this.conn && this.conn.open) {
             this.conn.send(data);
         } else {
-            console.warn('Cannot send data, connection not open');
+            console.warn('[PeerJS] Cannot send data - connection not open');
         }
     }
 
     // Disconnect & Cleanup
     disconnect() {
+        this.isConnected = false;
         if (this.conn) {
-            this.conn.close();
+            try { this.conn.close(); } catch (e) {}
             this.conn = null;
         }
         if (this.peer) {
-            this.peer.destroy();
+            try { this.peer.destroy(); } catch (e) {}
             this.peer = null;
         }
-        this.isConnected = false;
         this.isHost = false;
         this.roomCode = null;
         this.updateStatus('IDLE', 'Chưa kết nối');
@@ -198,6 +202,9 @@ class PeerManager {
     }
 
     handleError(message) {
+        if (typeof window.showToast === 'function') {
+            window.showToast(message);
+        }
         if (this.onError) {
             this.onError(message);
         }
