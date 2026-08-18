@@ -11,9 +11,8 @@ class MathGameEngine {
         this.mode = 'online'; // 'online', 'ai', 'local'
         this.myRole = 'p1'; // 'p1' or 'p2'
         
-        this.timeLimit = 200; // Default 200s
-        this.p1TimeLeft = 200;
-        this.p2TimeLeft = 200;
+        this.timeLimit = 200; // Default 200s (shared timer)
+        this.sharedTimeLeft = 200; // <<< SINGLE SHARED COUNTDOWN TIMER
         
         this.p1Score = 0;
         this.p2Score = 0;
@@ -191,18 +190,27 @@ class MathGameEngine {
         }
     }
 
-    // Evaluate Win Condition
+    // Evaluate Win Condition (based on shared timer & score comparison)
     checkWinCondition() {
-        if (this.p1TimeLeft <= 0) {
-            return 'opp_win'; // P1 ran out of time
-        }
-        if (this.p2TimeLeft <= 0) {
-            return 'my_win'; // P2 ran out of time
+        // Shared timer ran out → compare scores
+        if (this.sharedTimeLeft <= 0) {
+            if (this.p1Score > this.p2Score) {
+                return this.myRole === 'p1' ? 'my_win' : 'opp_win';
+            }
+            if (this.p2Score > this.p1Score) {
+                return this.myRole === 'p2' ? 'my_win' : 'opp_win';
+            }
+            return 'draw';
         }
 
+        // All 100 numbers found → compare scores
         if (this.foundNumbers.size >= 100) {
-            if (this.p1Score > this.p2Score) return 'my_win';
-            if (this.p2Score > this.p1Score) return 'opp_win';
+            if (this.p1Score > this.p2Score) {
+                return this.myRole === 'p1' ? 'my_win' : 'opp_win';
+            }
+            if (this.p2Score > this.p1Score) {
+                return this.myRole === 'p2' ? 'my_win' : 'opp_win';
+            }
             return 'draw';
         }
 

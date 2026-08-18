@@ -17,6 +17,13 @@ document.addEventListener('DOMContentLoaded', () => {
         btnSound: document.getElementById('btn-sound'),
         btnInfo: document.getElementById('btn-info'),
 
+        // Math HUD
+        sharedTimerDisplay: document.getElementById('shared-timer-display'),
+        p1ClockBadge: document.getElementById('p1-clock-badge'),
+        p2ClockBadge: document.getElementById('p2-clock-badge'),
+        p1TimerText: document.getElementById('p1-timer-text'),
+        p2TimerText: document.getElementById('p2-timer-text'),
+
         // Lobby Main Header Info
         heroTitle: document.getElementById('hero-title'),
         heroSubtitle: document.getElementById('hero-subtitle'),
@@ -513,8 +520,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Start Math Match
     function startMathMatch() {
         mathGameEngine.gameStarted = true;
-        mathGameEngine.p1TimeLeft = mathGameEngine.timeLimit;
-        mathGameEngine.p2TimeLeft = mathGameEngine.timeLimit;
+        mathGameEngine.sharedTimeLeft = mathGameEngine.timeLimit; // Shared single timer
         mathGameEngine.currentPhase = 'PROMPT';
         mathGameEngine.currentAttacker = 'p1';
         mathGameEngine.currentDefender = 'p2';
@@ -522,6 +528,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showView('gameplay-math');
         renderMathGameplayBoard();
         updateMathUI();
+        startMathTimerLoop(); // Start shared timer immediately
     }
 
     // Render Math 10x10 Gameplay Grid
@@ -544,8 +551,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Update Math UI & Clocks & Prompt History Chips
     function updateMathUI() {
-        elements.p1TimerText.innerText = `${mathGameEngine.p1TimeLeft}s`;
-        elements.p2TimerText.innerText = `${mathGameEngine.p2TimeLeft}s`;
+        // Shared timer displayed centrally and on hidden clocks
+        const sharedTime = mathGameEngine.sharedTimeLeft;
+        if (elements.sharedTimerDisplay) elements.sharedTimerDisplay.innerText = `${sharedTime}s`;
+        elements.p1TimerText.innerText = `${sharedTime}s`;
+        elements.p2TimerText.innerText = `${sharedTime}s`;
         elements.p1ScoreText.innerText = `ĐIỂM: ${mathGameEngine.p1Score}`;
         elements.p2ScoreText.innerText = `ĐIỂM: ${mathGameEngine.p2Score}`;
 
@@ -615,7 +625,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
                     updateMathUI();
-                    startMathTimerLoop();
+                    // Note: shared timer already running from startMathMatch(), no restart needed here
 
                     // If AI mode and Bot is defender, Bot searches
                     if (mathGameEngine.mode === 'ai' && mathGameEngine.currentDefender === 'p2') {
@@ -645,27 +655,34 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Countdown Timer Loop for Game 2
+    // Shared Countdown Timer Loop for Game 2
     function startMathTimerLoop() {
         if (mathGameEngine.timerInterval) {
             clearInterval(mathGameEngine.timerInterval);
         }
 
         mathGameEngine.timerInterval = setInterval(() => {
-            if (!mathGameEngine.gameStarted || mathGameEngine.gameOver || mathGameEngine.currentPhase !== 'FIND') {
+            if (!mathGameEngine.gameStarted || mathGameEngine.gameOver) {
                 return;
             }
 
-            if (mathGameEngine.currentDefender === 'p1') {
-                mathGameEngine.p1TimeLeft--;
-            } else {
-                mathGameEngine.p2TimeLeft--;
+            // Always count down the shared timer
+            mathGameEngine.sharedTimeLeft--;
+
+            const sharedTime = mathGameEngine.sharedTimeLeft;
+            if (elements.sharedTimerDisplay) elements.sharedTimerDisplay.innerText = `${sharedTime}s`;
+            elements.p1TimerText.innerText = `${sharedTime}s`;
+            elements.p2TimerText.innerText = `${sharedTime}s`;
+
+            // Visual warning when time is low
+            if (sharedTime <= 30) {
+                const sharedEl = elements.sharedTimerDisplay;
+                if (sharedEl) sharedEl.classList.add('timer-warning');
+                elements.p1ClockBadge && elements.p1ClockBadge.classList.add('clock-warning');
+                elements.p2ClockBadge && elements.p2ClockBadge.classList.add('clock-warning');
             }
 
-            elements.p1TimerText.innerText = `${mathGameEngine.p1TimeLeft}s`;
-            elements.p2TimerText.innerText = `${mathGameEngine.p2TimeLeft}s`;
-
-            // Check Win/Loss by Time Expiration
+            // Check Win/Loss by Time Expiration or All Found
             const winRes = mathGameEngine.checkWinCondition();
             if (winRes) {
                 clearInterval(mathGameEngine.timerInterval);

@@ -1686,3 +1686,59 @@ body {
     font-size: 0.9rem;
 }
 
+/* ===== SHARED TIMER (Game 2 - Single Countdown) ===== */
+.shared-timer-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 8px 16px;
+    background: rgba(2, 132, 199, 0.1);
+    border: 1.5px solid var(--primary-cyan);
+    border-radius: 14px;
+    min-width: 90px;
+    box-shadow: 0 0 14px var(--primary-glow);
+    transition: var(--transition-fast);
+}
+
+.shared-clock-icon {
+    font-size: 1rem;
+    color: var(--primary-cyan);
+    line-height: 1;
+}
+
+.shared-timer-value {
+    font-family: var(--font-heading);
+    font-weight: 900;
+    font-size: 1.5rem;
+    color: var(--primary-cyan);
+    line-height: 1;
+    letter-spacing: 1px;
+    transition: color 0.3s ease;
+}
+
+.shared-timer-label {
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+/* Warning animation when ≤ 30s left */
+.shared-timer-value.timer-warning {
+    color: var(--accent-magenta) !important;
+    animation: timerWarningPulse 0.6s infinite alternate;
+}
+
+.shared-timer-center:has(.timer-warning) {
+    border-color: var(--accent-magenta);
+    box-shadow: 0 0 18px var(--magenta-glow);
+}
+
+@keyframes timerWarningPulse {
+    from { opacity: 0.7; transform: scale(1); }
+    to   { opacity: 1;   transform: scale(1.08); }
+}
+
