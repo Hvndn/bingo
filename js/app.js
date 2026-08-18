@@ -16,6 +16,12 @@ document.addEventListener('DOMContentLoaded', () => {
         btnSound: document.getElementById('btn-sound'),
         btnInfo: document.getElementById('btn-info'),
 
+        // Lobby Main Header Info
+        heroTitle: document.getElementById('hero-title'),
+        heroSubtitle: document.getElementById('hero-subtitle'),
+        aiModeDesc: document.getElementById('ai-mode-desc'),
+        localModeDesc: document.getElementById('local-mode-desc'),
+
         // Lobby Mode Tabs
         modeTabs: document.querySelectorAll('.mode-tab'),
         modeContents: document.querySelectorAll('.mode-content'),
@@ -183,7 +189,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 elements.gameSwitcherBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 currentGame = btn.dataset.game;
-                showToast(currentGame === 'bingo' ? 'Đã chọn Trò 1: Neon Bingo' : 'Đã chọn Trò 2: Tìm Số Phép Tính');
+
+                if (currentGame === 'math') {
+                    if (elements.heroTitle) elements.heroTitle.innerHTML = '<i class="fa-solid fa-calculator"></i> TÌM SỐ PHÉP TÍNH';
+                    if (elements.heroSubtitle) elements.heroSubtitle.innerText = 'Thi đấu đếm ngược thời gian! Đố số và nhanh tay tìm ô phép tính toán học trên lưới 10x10 để tích điểm!';
+                    if (elements.aiModeDesc) elements.aiModeDesc.innerText = 'Đấu đếm ngược thời gian với Bot AI! Đố số và tìm vội vã 100 phép tính toán học trên lưới 10x10!';
+                    if (elements.localModeDesc) elements.localModeDesc.innerText = '2 Người chơi đố số và tìm phép tính trên lưới 10x10 dùng chung 1 thiết bị!';
+                    showToast('Đã chọn Trò 2: Tìm Số Phép Tính (10x10 Math Hunt)');
+                } else {
+                    if (elements.heroTitle) elements.heroTitle.innerHTML = 'ĐẤU TRƯỜNG BINGO';
+                    if (elements.heroSubtitle) elements.heroSubtitle.innerText = 'Thi đấu 2 người thời gian thực. Điền số từ 1–25, gọi số và tạo 5 hàng Bingo để giành chiến thắng!';
+                    if (elements.aiModeDesc) elements.aiModeDesc.innerText = 'Kiểm tra kỹ năng của bạn với trí tuệ nhân tạo. Máy sẽ tự động xếp số và chọn nước đi thông minh!';
+                    if (elements.localModeDesc) elements.localModeDesc.innerText = 'Thay phiên nhau xếp bàn số và truyền tay nhau thiết bị để đấu trực tiếp!';
+                    showToast('Đã chọn Trò 1: Neon Bingo');
+                }
             });
         });
 
