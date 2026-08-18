@@ -450,34 +450,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Manual Number Calling
         elements.btnCallNumber.addEventListener('click', () => {
-            submitManualCallNumber();
-        });
-
-        elements.inputCallNumber.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
                 submitManualCallNumber();
-            }
-        });
+            });
 
-        // Claim Bingo Victory Button
-        elements.btnCallBingo.addEventListener('click', () => {
-            claimBingoVictory();
-        });
+            elements.inputCallNumber.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    submitManualCallNumber();
+                }
+            });
+
+            // Claim Bingo Victory Button
+            elements.btnCallBingo.addEventListener('click', () => {
+                claimBingoVictory();
+            });
 
     // Prepare Math Game Setup Phase
     function prepareMathSetupBoard() {
         console.log('[PREP] prepareMathSetupBoard called');
         
-        // Step 1: Hide room info & switch view FIRST (always)
+        // Hide room info & switch view FIRST (always)
         if (elements.roomCreatedInfo) elements.roomCreatedInfo.classList.add('hidden');
         showView('setup-math');
 
-        // Step 2: Generate full 100-cell board deterministically
+        // ALWAYS generate full 100-cell board deterministically
         try {
             const seed = (mathGameEngine.mode === 'online' && peerManager.roomCode) ? peerManager.roomCode : null;
-            if (!Array.isArray(mathGameEngine.myBoard) || mathGameEngine.myBoard.length !== 100 || mathGameEngine.myBoard.includes(null)) {
-                mathGameEngine.myBoard = mathGameEngine.generateRandom100Board(seed);
-            }
+            mathGameEngine.myBoard = mathGameEngine.generateRandom100Board(seed);
             console.log('[PREP] Board generated with 100 cells, seed:', seed);
             if (elements.selectTimeLimit) {
                 elements.selectTimeLimit.disabled = (mathGameEngine.mode === 'online' && !peerManager.isHost);
@@ -487,15 +485,10 @@ document.addEventListener('DOMContentLoaded', () => {
             mathGameEngine.myBoard = mathGameEngine.generateRandom100Board();
         }
 
-        // Step 3: Render board
-        try {
-            renderMathSetupBoard();
-            console.log('[PREP] renderMathSetupBoard done');
-        } catch(e) {
-            console.error('[PREP] renderMathSetupBoard error:', e);
-        }
+        // Render board
+        renderMathSetupBoard();
 
-        // Step 4: Set time limit UI
+        // Set time limit UI
         if (elements.selectTimeLimit) {
             elements.selectTimeLimit.value = mathGameEngine.timeLimit ? mathGameEngine.timeLimit.toString() : '200';
         }
@@ -537,17 +530,19 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         }
 
-        // Step 5: Update Ready Status UI
+        // Update Ready Status UI
         updateMathReadyUI();
 
-        if (elements.btnReadyMath) {
-            elements.btnReadyMath.disabled = mathGameEngine.myReady;
-            elements.btnReadyMath.innerText = mathGameEngine.myReady ? 'ĐÃ SẴN SÀNG ✓' : 'SẴN SÀNG CHƠI';
-            elements.btnReadyMath.onclick = () => {
+        // Setup Ready Button Click
+        const btnReady = elements.btnReadyMath || document.getElementById('btn-ready-math');
+        if (btnReady) {
+            btnReady.disabled = mathGameEngine.myReady;
+            btnReady.innerText = mathGameEngine.myReady ? 'ĐÃ SẴN SÀNG ✓' : 'SẴN SÀNG CHƠI';
+            btnReady.onclick = () => {
                 soundEngine.playReady();
                 mathGameEngine.myReady = true;
-                elements.btnReadyMath.disabled = true;
-                elements.btnReadyMath.innerText = 'ĐÃ SẴN SÀNG ✓';
+                btnReady.disabled = true;
+                btnReady.innerText = 'ĐÃ SẴN SÀNG ✓';
 
                 updateMathReadyUI();
 
@@ -571,86 +566,73 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateMathReadyUI() {
+        const readyStatusEl = elements.mathReadyStatus || document.getElementById('math-ready-status');
         if (mathGameEngine.mode !== 'online') {
-            if (elements.mathReadyStatus) elements.mathReadyStatus.classList.add('hidden');
+            if (readyStatusEl) readyStatusEl.classList.add('hidden');
             return;
         }
 
-        if (elements.mathReadyStatus) elements.mathReadyStatus.classList.remove('hidden');
+        if (readyStatusEl) readyStatusEl.classList.remove('hidden');
 
         const myReady = mathGameEngine.myReady;
         const oppReady = mathGameEngine.oppReady;
 
         const count = (myReady ? 1 : 0) + (oppReady ? 1 : 0);
 
-        if (elements.readyCountText) {
-            elements.readyCountText.innerText = `${count}/2 người chơi đã sẵn sàng`;
+        const countTextEl = elements.readyCountText || document.getElementById('ready-count-text');
+        if (countTextEl) {
+            countTextEl.innerText = `${count}/2 người chơi đã sẵn sàng`;
         }
 
-        if (elements.readyDotMe) {
-            elements.readyDotMe.classList.toggle('active', myReady);
+        const dotMeEl = elements.readyDotMe || document.getElementById('ready-dot-me');
+        if (dotMeEl) {
+            dotMeEl.classList.toggle('active', myReady);
         }
 
-        if (elements.readyDotOpp) {
-            elements.readyDotOpp.classList.toggle('active', oppReady);
+        const dotOppEl = elements.readyDotOpp || document.getElementById('ready-dot-opp');
+        if (dotOppEl) {
+            dotOppEl.classList.toggle('active', oppReady);
         }
 
-        if (elements.readyWaitingText) {
+        const waitingTextEl = elements.readyWaitingText || document.getElementById('ready-waiting-text');
+        if (waitingTextEl) {
             if (myReady && oppReady) {
-                elements.readyWaitingText.innerText = '⚡ Cả 2 đã sẵn sàng! Đang bắt đầu...';
-                elements.readyWaitingText.style.color = 'var(--neon-green)';
+                waitingTextEl.innerText = '⚡ Cả 2 đã sẵn sàng! Đang bắt đầu...';
+                waitingTextEl.style.color = 'var(--neon-green)';
             } else if (myReady && !oppReady) {
-                elements.readyWaitingText.innerText = '⏳ Bạn đã sẵn sàng. Đang chờ đối thủ...';
-                elements.readyWaitingText.style.color = 'var(--text-muted)';
+                waitingTextEl.innerText = '⏳ Bạn đã sẵn sàng. Đang chờ đối thủ...';
+                waitingTextEl.style.color = 'var(--text-muted)';
             } else if (!myReady && oppReady) {
-                elements.readyWaitingText.innerText = '🔔 Đối thủ đã sẵn sàng! Bấm nút bên dưới để bắt đầu.';
-                elements.readyWaitingText.style.color = 'var(--primary-cyan)';
+                waitingTextEl.innerText = '🔔 Đối thủ đã sẵn sàng! Bấm nút bên dưới để bắt đầu.';
+                waitingTextEl.style.color = 'var(--primary-cyan)';
             } else {
-                elements.readyWaitingText.innerText = 'Đang chờ 2 người chơi bấm sẵn sàng...';
-                elements.readyWaitingText.style.color = 'var(--text-muted)';
+                waitingTextEl.innerText = 'Đang chờ 2 người chơi bấm sẵn sàng...';
+                waitingTextEl.style.color = 'var(--text-muted)';
             }
         }
     }
 
     function renderMathSetupBoard() {
-        if (!elements.setupBoardMath) return;
-        elements.setupBoardMath.innerHTML = '';
-        if (!Array.isArray(mathGameEngine.myBoard) || mathGameEngine.myBoard.length === 0) return;
+        const boardEl = elements.setupBoardMath || document.getElementById('setup-board-math');
+        if (!boardEl) return;
+        boardEl.innerHTML = '';
+
+        if (!Array.isArray(mathGameEngine.myBoard) || mathGameEngine.myBoard.length === 0) {
+            mathGameEngine.myBoard = mathGameEngine.generateRandom100Board();
+        }
 
         mathGameEngine.myBoard.forEach((cell, index) => {
             const cellEl = document.createElement('div');
             cellEl.className = `math-cell ${cell ? 'filled' : ''}`;
             cellEl.innerText = cell ? cell.expr : '';
-            
-            cellEl.onclick = () => {
-                soundEngine.playClick();
-                fillNextAvailableMathCell(index);
-            };
-
-            elements.setupBoardMath.appendChild(cellEl);
+            boardEl.appendChild(cellEl);
         });
     }
 
-    function fillNextAvailableMathCell(index) {
-        if (mathGameEngine.myBoard[index]) {
-            mathGameEngine.myBoard[index] = null;
-        } else {
-            const assigned = new Set(mathGameEngine.myBoard.filter(c => c).map(c => c.targetNum));
-            for (let i = 1; i <= 100; i++) {
-                if (!assigned.has(i)) {
-                    mathGameEngine.myBoard[index] = mathGameEngine.generateMathExprFor(i);
-                    break;
-                }
-            }
-        }
-        renderMathSetupBoard();
-        checkMathSetupReadyState();
-    }
-
     function checkMathSetupReadyState() {
-        const isValid = Array.isArray(mathGameEngine.myBoard) && mathGameEngine.myBoard.filter(c => c !== null).length === 100;
-        if (elements.btnReadyMath) {
-            elements.btnReadyMath.disabled = !isValid || mathGameEngine.myReady;
+        const btnReady = elements.btnReadyMath || document.getElementById('btn-ready-math');
+        if (btnReady) {
+            btnReady.disabled = mathGameEngine.myReady;
         }
         updateMathReadyUI();
     }
