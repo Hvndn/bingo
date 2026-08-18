@@ -467,6 +467,12 @@ document.addEventListener('DOMContentLoaded', () => {
             mathGameEngine.myBoard = mathGameEngine.fillRemainingRandomly100(mathGameEngine.myBoard);
             renderMathSetupBoard();
             checkMathSetupReadyState();
+            if (peerManager.isHost && mathGameEngine.mode === 'online') {
+                peerManager.sendData({
+                    type: 'GAME2_SYNC_BOARD',
+                    payload: { sharedBoard: mathGameEngine.myBoard, timeLimit: mathGameEngine.timeLimit }
+                });
+            }
         };
 
         elements.btnClearBoardMath.onclick = () => {
@@ -943,6 +949,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 setTimeout(() => {
                     if (currentGame === 'math') {
                         prepareMathSetupBoard();
+                        if (peerManager.isHost) {
+                            // Host automatically sends generated board to Guest upon connection
+                            peerManager.sendData({
+                                type: 'GAME2_SYNC_BOARD',
+                                payload: { sharedBoard: mathGameEngine.myBoard, timeLimit: mathGameEngine.timeLimit }
+                            });
+                        }
                     } else {
                         prepareSetupBoard();
                     }
@@ -1309,7 +1322,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const syncedBoard = mathGameEngine.boardFromJSON(payload.sharedBoard);
                 if (syncedBoard) {
                     mathGameEngine.myBoard = syncedBoard;
-                    showToast('✅ Bảng phép tính đã được đồng bộ!');
+                    renderMathSetupBoard();
+                    checkMathSetupReadyState();
+                    showToast('✅ Đã đồng bộ bàn 100 phép tính từ Chủ Phòng!');
                 }
             }
             if (payload.timeLimit) mathGameEngine.timeLimit = payload.timeLimit;
