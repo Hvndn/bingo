@@ -557,13 +557,14 @@ document.addEventListener('DOMContentLoaded', () => {
         showView('gameplay-math');
         renderMathGameplayBoard();
         updateMathUI();
-        startMathTimerLoop(); // Start shared timer immediately
+        startMathTimerLoop();
     }
 
     // Render Math 10x10 Gameplay Grid
     function renderMathGameplayBoard() {
         elements.gameplayBoardMath.innerHTML = '';
-        mathGameEngine.myBoard.forEach((cell, index) => {
+        const boardToRender = mathGameEngine.myBoard;
+        boardToRender.forEach((cell, index) => {
             const cellEl = document.createElement('div');
             const markRole = mathGameEngine.markedCells.get(index);
 
@@ -1309,6 +1310,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const syncedBoard = mathGameEngine.boardFromJSON(payload.sharedBoard);
                 if (syncedBoard) {
                     mathGameEngine.myBoard = syncedBoard;
+                    renderMathSetupBoard();
+                    if (mathGameEngine.gameStarted) renderMathGameplayBoard();
                     showToast('✅ Đã đồng bộ bảng phép tính từ Host! Cả 2 dùng bảng giống nhau.');
                 }
             } else if (!payload.sharedBoard && peerManager.isHost) {
@@ -1328,6 +1331,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (syncedBoard) {
                     mathGameEngine.myBoard = syncedBoard;
                     renderMathSetupBoard();
+                    if (mathGameEngine.gameStarted) renderMathGameplayBoard();
                     checkMathSetupReadyState();
                     showToast('✅ Đã đồng bộ bàn 100 phép tính từ Chủ Phòng!');
                 }
