@@ -67,14 +67,16 @@ class PeerManager {
         });
     }
 
-    // Initialize PeerJS Object
+    // Initialize PeerJS Object with Local/Cloud Server Option
     initPeer(id, onOpen) {
         if (this.peer) {
-            this.peer.destroy();
+            try {
+                this.peer.destroy();
+            } catch (e) {}
         }
 
-        // Using standard PeerJS Server
-        this.peer = new Peer(id, {
+        const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+        let peerOpts = {
             debug: 1,
             config: {
                 iceServers: [
@@ -83,7 +85,15 @@ class PeerManager {
                     { urls: 'stun:stun2.l.google.com:19302' }
                 ]
             }
-        });
+        };
+
+        if (isLocalhost) {
+            peerOpts.host = location.hostname;
+            peerOpts.port = location.port || 3000;
+            peerOpts.path = '/peerjs/myapp';
+        }
+
+        this.peer = new Peer(id, peerOpts);
 
         this.peer.on('open', (assignedId) => {
             this.peerId = assignedId;

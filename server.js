@@ -102,7 +102,18 @@ app.get('/api/stats', (req, res) => {
     }
 });
 
+const { ExpressPeerServer } = require('peer');
+
 // Start Server
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
     console.log(`🚀 NEON BINGO Fullstack Server running at http://localhost:${PORT}`);
 });
+
+// Integrated PeerServer for reliable instant WebRTC P2P signaling
+const peerServer = ExpressPeerServer(server, {
+    debug: false,
+    path: '/myapp'
+});
+
+app.use('/peerjs', peerServer);
+
