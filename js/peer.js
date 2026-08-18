@@ -127,10 +127,8 @@ class PeerManager {
 
             if (onConnected) onConnected();
 
-            // Host sends welcome sync packet
-            if (this.isHost) {
-                this.sendData({ type: 'HANDSHAKE', payload: { role: 'GUEST' } });
-            }
+            // Send handshake packet from both host & guest to trigger auto-transition
+            this.sendData({ type: 'HANDSHAKE', payload: { role: this.isHost ? 'HOST' : 'GUEST' } });
         });
 
         this.conn.on('data', (data) => {

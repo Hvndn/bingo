@@ -1327,7 +1327,18 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleP2PData(data) {
         const { type, payload } = data;
 
-        if (type === 'PLAYER_READY') {
+        // Auto transition out of lobby if any P2P packet arrives while player is still in Lobby
+        if (elements.viewLobby && elements.viewLobby.classList.contains('active')) {
+            if (currentGame === 'math') {
+                prepareMathSetupBoard();
+            } else {
+                prepareSetupBoard();
+            }
+        }
+
+        if (type === 'HANDSHAKE') {
+            showToast('✅ Đã kết nối kênh truyền P2P với đối thủ!');
+        } else if (type === 'PLAYER_READY') {
             bingoEngine.oppReady = true;
             elements.opponentSetupBadge.classList.add('ready');
             elements.opponentSetupText.innerText = 'Đối phương đã sẵn sàng!';
