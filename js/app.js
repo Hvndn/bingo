@@ -111,6 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // State Variables
     let selectedSetupIndex = 0;
+    let currentGame = 'bingo'; // 'bingo' or 'math'
 
     // Initialize App
     function init() {
@@ -235,9 +236,15 @@ document.addEventListener('DOMContentLoaded', () => {
         // Create Room Button
         elements.btnCreateRoom.addEventListener('click', () => {
             soundEngine.playClick();
-            bingoEngine.resetState();
-            bingoEngine.mode = 'online';
-            bingoEngine.myRole = 'p1';
+            if (currentGame === 'math') {
+                mathGameEngine.resetState();
+                mathGameEngine.mode = 'online';
+                mathGameEngine.myRole = 'p1';
+            } else {
+                bingoEngine.resetState();
+                bingoEngine.mode = 'online';
+                bingoEngine.myRole = 'p1';
+            }
 
             peerManager.createRoom((roomCode) => {
                 elements.displayRoomCode.innerText = roomCode;
@@ -273,9 +280,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            bingoEngine.resetState();
-            bingoEngine.mode = 'online';
-            bingoEngine.myRole = 'p2';
+            if (currentGame === 'math') {
+                mathGameEngine.resetState();
+                mathGameEngine.mode = 'online';
+                mathGameEngine.myRole = 'p2';
+            } else {
+                bingoEngine.resetState();
+                bingoEngine.mode = 'online';
+                bingoEngine.myRole = 'p2';
+            }
 
             peerManager.joinRoom(code, () => {
                 showToast('Đã kết nối tới phòng!');
@@ -764,7 +777,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 setTimeout(() => {
-                    prepareSetupBoard();
+                    if (currentGame === 'math') {
+                        prepareMathSetupBoard();
+                    } else {
+                        prepareSetupBoard();
+                    }
                 }, 800);
             } else if (status.state === 'CLOSED' || status.state === 'DISCONNECTED') {
                 showToast(status.message);
@@ -1254,12 +1271,16 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             elements.modalTitle.innerText = 'BẠN ĐÃ CHIẾN THẮNG!';
             elements.modalTitle.style.color = 'var(--gold-yellow)';
-            elements.modalDesc.innerText = 'Chúc mừng! Bạn đã hoàn thành 5 hàng Bingo trước!';
+            elements.modalDesc.innerText = currentGame === 'math' 
+                ? 'Chúc mừng! Bạn đã đạt điểm cao hơn hoặc đối thủ đã hết thời gian đếm ngược!' 
+                : 'Chúc mừng! Bạn đã hoàn thành 5 hàng Bingo trước!';
         } else if (result === 'opp_win') {
             soundEngine.playLose();
             elements.modalTitle.innerText = 'BẠN ĐÃ THẤT BẠI!';
             elements.modalTitle.style.color = 'var(--accent-magenta)';
-            elements.modalDesc.innerText = 'Đối thủ đã tạo thành công 5 hàng Bingo trước bạn!';
+            elements.modalDesc.innerText = currentGame === 'math'
+                ? 'Rất tiếc! Hết thời gian đếm ngược hoặc đối thủ đạt điểm số cao hơn!'
+                : 'Đối thủ đã tạo thành công 5 hàng Bingo trước bạn!';
         } else if (result === 'opp_disconnect') {
             elements.modalTitle.innerText = 'ĐỐI THỦ ĐÃ THOÁT!';
             elements.modalTitle.style.color = 'var(--primary-cyan)';
