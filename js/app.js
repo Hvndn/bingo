@@ -557,7 +557,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showView('gameplay-math');
         renderMathGameplayBoard();
         updateMathUI();
-        startMathTimerLoop();
+        // Timer does NOT start automatically at match start; awaits first prompt!
     }
 
     // Render Math 10x10 Gameplay Grid
@@ -655,7 +655,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
                     updateMathUI();
-                    // Note: shared timer already running from startMathMatch(), no restart needed here
+                    startMathTimerLoop(); // Chơi đố số xong -> Bắt đầu đếm ngược thời gian tìm kiếm!
 
                     // If AI mode and Bot is defender, Bot searches
                     if (mathGameEngine.mode === 'ai' && mathGameEngine.currentDefender === 'p2') {
@@ -1341,7 +1341,7 @@ document.addEventListener('DOMContentLoaded', () => {
             soundEngine.playReady();
             mathGameEngine.setPromptTarget(payload.targetNum);
             updateMathUI();
-            // Note: shared timer runs continuously, no restart needed here
+            startMathTimerLoop(); // Kích hoạt bộ đếm thời gian khi nhận được số đố từ đối thủ!
             showToast(`Đối thủ vừa đố số [ ${payload.targetNum} ]! Tìm ngay trên lưới 10x10!`);
         } else if (type === 'GAME2_CELL_FOUND') {
             soundEngine.playMarkNumber();
