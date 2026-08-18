@@ -161,17 +161,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // View Routing
     function showView(viewName) {
-        elements.viewLobby.classList.remove('active');
-        elements.viewSetup.classList.remove('active');
-        elements.viewGameplay.classList.remove('active');
+        if (elements.viewLobby) elements.viewLobby.classList.remove('active');
+        if (elements.viewSetup) elements.viewSetup.classList.remove('active');
+        if (elements.viewGameplay) elements.viewGameplay.classList.remove('active');
         if (elements.viewSetupMath) elements.viewSetupMath.classList.remove('active');
         if (elements.viewGameplayMath) elements.viewGameplayMath.classList.remove('active');
 
-        if (viewName === 'lobby') elements.viewLobby.classList.add('active');
-        if (viewName === 'setup') elements.viewSetup.classList.add('active');
-        if (viewName === 'gameplay') elements.viewGameplay.classList.add('active');
-        if (viewName === 'setup-math') elements.viewSetupMath.classList.add('active');
-        if (viewName === 'gameplay-math') elements.viewGameplayMath.classList.add('active');
+        if (viewName === 'lobby' && elements.viewLobby) elements.viewLobby.classList.add('active');
+        if (viewName === 'setup' && elements.viewSetup) elements.viewSetup.classList.add('active');
+        if (viewName === 'gameplay' && elements.viewGameplay) elements.viewGameplay.classList.add('active');
+        if (viewName === 'setup-math' && elements.viewSetupMath) elements.viewSetupMath.classList.add('active');
+        if (viewName === 'gameplay-math' && elements.viewGameplayMath) elements.viewGameplayMath.classList.add('active');
     }
 
     // Toast Notification Helper
