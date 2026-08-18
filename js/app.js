@@ -333,6 +333,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 bingoEngine.myRole = 'p1';
             }
 
+            peerManager.gameMode = currentGame; // Save at room creation time
             peerManager.createRoom((roomCode) => {
                 elements.displayRoomCode.innerText = roomCode;
                 elements.roomCreatedInfo.classList.remove('hidden');
@@ -384,6 +385,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 bingoEngine.myRole = 'p2';
             }
 
+            peerManager.gameMode = currentGame; // Save at join time
             peerManager.joinRoom(code, () => {
                 showToast('Đã kết nối tới phòng!');
             });
@@ -459,81 +461,112 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Prepare Math Game Setup Phase
     function prepareMathSetupBoard() {
+        console.log('[PREP] prepareMathSetupBoard called');
+        
+        // Step 1: Hide room info & switch view FIRST (always)
         if (elements.roomCreatedInfo) elements.roomCreatedInfo.classList.add('hidden');
         showView('setup-math');
+        console.log('[PREP] showView(setup-math) done');
 
-        if (mathGameEngine.mode === 'online' && peerManager.roomCode) {
-            // Both Host and Guest deterministically generate identical board using roomCode seed
-            mathGameEngine.myBoard = mathGameEngine.generateRandom100Board(peerManager.roomCode);
-            if (!peerManager.isHost) {
-                elements.selectTimeLimit.disabled = true;
+        // Step 2: Generate board
+        try {
+            if (mathGameEngine.mode === 'online' && peerManager.roomCode) {
+                mathGameEngine.myBoard = mathGameEngine.generateRandom100Board(peerManager.roomCode);
+                console.log('[PREP] Board generated for online mode');
+                if (elements.selectTimeLimit) {
+                    elements.selectTimeLimit.disabled = !peerManager.isHost;
+                }
             } else {
-                elements.selectTimeLimit.disabled = false;
+                if (!mathGameEngine.myBoard || mathGameEngine.myBoard.includes(null)) {
+                    mathGameEngine.myBoard = mathGameEngine.generateRandom100Board();
+                }
+                if (elements.selectTimeLimit) elements.selectTimeLimit.disabled = false;
             }
-        } else {
-            // Local / AI mode
-            if (!mathGameEngine.myBoard || mathGameEngine.myBoard.includes(null)) {
-                mathGameEngine.myBoard = mathGameEngine.generateRandom100Board();
-            }
-            elements.selectTimeLimit.disabled = false;
+        } catch(e) {
+            console.error('[PREP] Board generation error:', e);
         }
 
-        renderMathSetupBoard();
-        checkMathSetupReadyState();
+        // Step 3: Render board
+        try {
+            renderMathSetupBoard();
+            console.log('[PREP] renderMathSetupBoard done');
+        } catch(e) {
+            console.error('[PREP] renderMathSetupBoard error:', e);
+        }
 
-        elements.selectTimeLimit.value = mathGameEngine.timeLimit ? mathGameEngine.timeLimit.toString() : '200';
+        // Step 4: Check ready state
+        try {
+            checkMathSetupReadyState();
+        } catch(e) {
+            console.error('[PREP] checkMathSetupReadyState error:', e);
+        }
+
+        // Step 5: Set time limit UI
+        if (elements.selectTimeLimit) {
+            elements.selectTimeLimit.value = mathGameEngine.timeLimit ? mathGameEngine.timeLimit.toString() : '200';
+        }
 
         const customWrapper = document.getElementById('custom-time-wrapper');
         const inputCustomTime = document.getElementById('input-custom-time');
 
-        elements.selectTimeLimit.onchange = () => {
-            const val = elements.selectTimeLimit.value;
-            if (val === 'custom') {
-                customWrapper.classList.remove('hidden');
-                inputCustomTime.focus();
-            } else {
-                customWrapper.classList.add('hidden');
-                mathGameEngine.timeLimit = parseInt(val);
-                if (peerManager.isHost && mathGameEngine.mode === 'online') {
-                    peerManager.sendData({
-                        type: 'GAME2_SYNC_BOARD',
-                        payload: { sharedBoard: mathGameEngine.myBoard, timeLimit: mathGameEngine.timeLimit }
-                    });
-                }
-            }
-        };
-
-        inputCustomTime.oninput = () => {
-            const customVal = parseInt(inputCustomTime.value);
-            if (!isNaN(customVal) && customVal >= 10 && customVal <= 3600) {
-                mathGameEngine.timeLimit = customVal;
-                if (peerManager.isHost && mathGameEngine.mode === 'online') {
-                    peerManager.sendData({
-                        type: 'GAME2_SYNC_BOARD',
-                        payload: { sharedBoard: mathGameEngine.myBoard, timeLimit: mathGameEngine.timeLimit }
-                    });
-                }
-            }
-        };
-
-        elements.btnReadyMath.onclick = () => {
-            soundEngine.playReady();
-            mathGameEngine.myReady = true;
-            elements.btnReadyMath.disabled = true;
-            elements.btnReadyMath.innerText = 'ĐÃ SẴN SÀNG ✓';
-
-            if (mathGameEngine.mode === 'online') {
-                peerManager.sendData({
-                    type: 'GAME2_PLAYER_READY',
-                    payload: {
-                        timeLimit: mathGameEngine.timeLimit,
-                        sharedBoard: peerManager.isHost ? mathGameEngine.myBoard : null
+        if (elements.selectTimeLimit) {
+            elements.selectTimeLimit.onchange = () => {
+                const val = elements.selectTimeLimit.value;
+                if (val === 'custom') {
+                    if (customWrapper) customWrapper.classList.remove('hidden');
+                    if (inputCustomTime) inputCustomTime.focus();
+                } else {
+                    if (customWrapper) customWrapper.classList.add('hidden');
+                    mathGameEngine.timeLimit = parseInt(val);
+                    if (peerManager.isHost && mathGameEngine.mode === 'online') {
+                        peerManager.sendData({
+                            type: 'GAME2_SYNC_BOARD',
+                            payload: { sharedBoard: mathGameEngine.myBoard, timeLimit: mathGameEngine.timeLimit }
+                        });
                     }
-                });
-            }
+                }
+            };
+        }
 
-            checkMathBothReadyToStart();
-        };
+        if (inputCustomTime) {
+            inputCustomTime.oninput = () => {
+                const customVal = parseInt(inputCustomTime.value);
+                if (!isNaN(customVal) && customVal >= 10 && customVal <= 3600) {
+                    mathGameEngine.timeLimit = customVal;
+                    if (peerManager.isHost && mathGameEngine.mode === 'online') {
+                        peerManager.sendData({
+                            type: 'GAME2_SYNC_BOARD',
+                            payload: { sharedBoard: mathGameEngine.myBoard, timeLimit: mathGameEngine.timeLimit }
+                        });
+                    }
+                }
+            };
+        }
+
+        if (elements.btnReadyMath) {
+            elements.btnReadyMath.disabled = false;
+            elements.btnReadyMath.innerText = 'SẴN SÀNG';
+            elements.btnReadyMath.onclick = () => {
+                soundEngine.playReady();
+                mathGameEngine.myReady = true;
+                elements.btnReadyMath.disabled = true;
+                elements.btnReadyMath.innerText = 'ĐÃ SẴN SÀNG ✓';
+
+                if (mathGameEngine.mode === 'online') {
+                    peerManager.sendData({
+                        type: 'GAME2_PLAYER_READY',
+                        payload: {
+                            timeLimit: mathGameEngine.timeLimit,
+                            sharedBoard: peerManager.isHost ? mathGameEngine.myBoard : null
+                        }
+                    });
+                }
+
+                checkMathBothReadyToStart();
+            };
+        }
+        
+        console.log('[PREP] prepareMathSetupBoard complete');
     }
 
     function renderMathSetupBoard() {
@@ -975,28 +1008,54 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Peer Manager Callbacks Setup
         peerManager.onStatusChange = (status) => {
-            console.log('Network Status:', status);
+            console.log('[APP] onStatusChange fired:', JSON.stringify(status));
+            console.log('[APP] currentGame =', currentGame);
+            
             if (status.state === 'CONNECTED') {
+                console.log('[APP] CONNECTED! isHost =', status.isHost);
+                
                 if (status.isHost) {
-                    elements.connectionStatusText.innerText = 'Đối thủ đã vào phòng!';
-                    elements.p1Name.innerText = 'BẠN (HOST)';
-                    elements.p2Name.innerText = 'ĐỐI THỦ';
+                    if (elements.connectionStatusText) elements.connectionStatusText.innerText = 'Đối thủ đã vào phòng!';
+                    if (elements.p1Name) elements.p1Name.innerText = 'BẠN (HOST)';
+                    if (elements.p2Name) elements.p2Name.innerText = 'ĐỐI THỦ';
                 } else {
-                    elements.p1Name.innerText = 'BẠN (GUEST)';
-                    elements.p2Name.innerText = 'ĐỐI THỦ (HOST)';
+                    if (elements.p1Name) elements.p1Name.innerText = 'BẠN (GUEST)';
+                    if (elements.p2Name) elements.p2Name.innerText = 'ĐỐI THỦ (HOST)';
                 }
 
-                if (currentGame === 'math') {
-                    prepareMathSetupBoard();
+                console.log('[APP] About to call showView / prepareMathSetupBoard...');
+                
+                // Use gameMode saved at room creation/join time (not live currentGame which can drift)
+                const gameMode = peerManager.gameMode || currentGame;
+                console.log('[APP] gameMode from peerManager:', gameMode);
+                
+                if (gameMode === 'math') {
+                    console.log('[APP] Calling prepareMathSetupBoard()...');
+                    try {
+                        prepareMathSetupBoard();
+                        console.log('[APP] prepareMathSetupBoard() completed OK');
+                    } catch(e) {
+                        console.error('[APP] prepareMathSetupBoard() ERROR:', e);
+                        // Fallback: force direct DOM navigation
+                        document.getElementById('view-lobby').classList.remove('active');
+                        document.getElementById('view-setup-math').classList.add('active');
+                        console.log('[APP] Fallback direct DOM navigation done');
+                    }
                     if (peerManager.isHost) {
-                        // Host automatically sends generated board to Guest upon connection
                         peerManager.sendData({
                             type: 'GAME2_SYNC_BOARD',
                             payload: { sharedBoard: mathGameEngine.myBoard, timeLimit: mathGameEngine.timeLimit }
                         });
                     }
                 } else {
-                    prepareSetupBoard();
+                    console.log('[APP] Calling prepareSetupBoard()...');
+                    try {
+                        prepareSetupBoard();
+                    } catch(e) {
+                        console.error('[APP] prepareSetupBoard() ERROR:', e);
+                        document.getElementById('view-lobby').classList.remove('active');
+                        document.getElementById('view-setup').classList.add('active');
+                    }
                 }
             } else if (status.state === 'CLOSED') {
                 showToast(status.message);
