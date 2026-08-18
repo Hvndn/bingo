@@ -431,15 +431,46 @@ document.addEventListener('DOMContentLoaded', () => {
             claimBingoVictory();
         });
 
-        // Prepare Math Game Setup Phase
+    // Prepare Math Game Setup Phase
     function prepareMathSetupBoard() {
         showView('setup-math');
-        mathGameEngine.myBoard = mathGameEngine.generateRandom100Board();
+
+        const isOnlineGuest = mathGameEngine.mode === 'online' && !peerManager.isHost;
+
+        if (isOnlineGuest) {
+            // Guest does NOT generate an independent board; requests Host board instead
+            if (!mathGameEngine.myBoard || mathGameEngine.myBoard.includes(null)) {
+                mathGameEngine.myBoard = new Array(100).fill(null);
+            }
+            // Request Host to send its current board
+            peerManager.sendData({ type: 'GAME2_REQUEST_SYNC' });
+            
+            // Disable board edit buttons for Guest so Host controls the shared board
+            elements.btnAutoFillMath.style.display = 'none';
+            elements.btnClearBoardMath.style.display = 'none';
+            elements.selectTimeLimit.disabled = true;
+        } else {
+            // Host / Local / AI generates the initial board
+            if (!mathGameEngine.myBoard || mathGameEngine.myBoard.includes(null)) {
+                mathGameEngine.myBoard = mathGameEngine.generateRandom100Board();
+            }
+            elements.btnAutoFillMath.style.display = 'inline-flex';
+            elements.btnClearBoardMath.style.display = 'inline-flex';
+            elements.selectTimeLimit.disabled = false;
+
+            // If Host in online mode, broadcast board to guest immediately
+            if (mathGameEngine.mode === 'online' && peerManager.isHost) {
+                peerManager.sendData({
+                    type: 'GAME2_SYNC_BOARD',
+                    payload: { sharedBoard: mathGameEngine.myBoard, timeLimit: mathGameEngine.timeLimit }
+                });
+            }
+        }
+
         renderMathSetupBoard();
         checkMathSetupReadyState();
 
-        elements.selectTimeLimit.value = '200'; // Default
-        mathGameEngine.timeLimit = 200;
+        elements.selectTimeLimit.value = mathGameEngine.timeLimit ? mathGameEngine.timeLimit.toString() : '200';
 
         const customWrapper = document.getElementById('custom-time-wrapper');
         const inputCustomTime = document.getElementById('input-custom-time');
@@ -452,6 +483,12 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 customWrapper.classList.add('hidden');
                 mathGameEngine.timeLimit = parseInt(val);
+                if (peerManager.isHost && mathGameEngine.mode === 'online') {
+                    peerManager.sendData({
+                        type: 'GAME2_SYNC_BOARD',
+                        payload: { sharedBoard: mathGameEngine.myBoard, timeLimit: mathGameEngine.timeLimit }
+                    });
+                }
             }
         };
 
@@ -459,6 +496,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const customVal = parseInt(inputCustomTime.value);
             if (!isNaN(customVal) && customVal >= 10 && customVal <= 3600) {
                 mathGameEngine.timeLimit = customVal;
+                if (peerManager.isHost && mathGameEngine.mode === 'online') {
+                    peerManager.sendData({
+                        type: 'GAME2_SYNC_BOARD',
+                        payload: { sharedBoard: mathGameEngine.myBoard, timeLimit: mathGameEngine.timeLimit }
+                    });
+                }
             }
         };
 
@@ -1324,6 +1367,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
             showToast('Đối thủ đã sẵn sàng Trò 2!');
             checkMathBothReadyToStart();
+        } else if (type === 'GAME2_REQUEST_SYNC') {
+            // Guest requested Host to send current shared board
+            if (peerManager.isHost) {
+                peerManager.sendData({
+                    type: 'GAME2_SYNC_BOARD',
+                    payload: { sharedBoard: mathGameEngine.myBoard, timeLimit: mathGameEngine.timeLimit }
+                });
+            }
         } else if (type === 'GAME2_SYNC_BOARD') {
             // Host sent the shared board to guest
             if (!peerManager.isHost && payload.sharedBoard) {
