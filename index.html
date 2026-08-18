@@ -17,7 +17,7 @@
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
-    <link rel="stylesheet" href="styles.css?v=3.1">
+    <link rel="stylesheet" href="styles.css?v=3.2">
 </head>
 <body>
     <div class="app-background">
@@ -282,7 +282,7 @@
 
         <!-- View 4: Chuẩn Bị Bàn Phép Tính 10x10 (Math Setup) -->
         <main id="view-setup-math" class="view-panel">
-            <div class="setup-container glass-panel">
+            <div class="setup-container-math glass-panel">
                 <div class="setup-header">
                     <h2><i class="fa-solid fa-calculator"></i> TRÒ 2: XẾP BÀN 100 PHÉP TÍNH (10x10)</h2>
                     <p class="setup-subtitle">Bàn 10x10 chứa 100 phép tính toán học tương ứng với các số từ 1 đến 100.</p>
@@ -313,6 +313,18 @@
                     <div id="setup-board-math" class="math-grid setup-math-grid">
                         <!-- 100 Cells generated dynamically -->
                     </div>
+                </div>
+
+                <!-- Ready Status Counter (Online Only) -->
+                <div id="math-ready-status" class="math-ready-status hidden">
+                    <div class="ready-counter">
+                        <span id="ready-count-text">0/2 người sẵn sàng</span>
+                        <div class="ready-dots">
+                            <span id="ready-dot-me" class="ready-dot"></span>
+                            <span id="ready-dot-opp" class="ready-dot"></span>
+                        </div>
+                    </div>
+                    <p id="ready-waiting-text" class="ready-waiting-msg">Đang chờ đối thủ bấm sẵn sàng...</p>
                 </div>
 
                 <!-- Setup Action Buttons -->

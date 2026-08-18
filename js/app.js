@@ -104,6 +104,11 @@ document.addEventListener('DOMContentLoaded', () => {
         selectTimeLimit: document.getElementById('select-time-limit'),
         setupBoardMath: document.getElementById('setup-board-math'),
         btnReadyMath: document.getElementById('btn-ready-math'),
+        mathReadyStatus: document.getElementById('math-ready-status'),
+        readyCountText: document.getElementById('ready-count-text'),
+        readyDotMe: document.getElementById('ready-dot-me'),
+        readyDotOpp: document.getElementById('ready-dot-opp'),
+        readyWaitingText: document.getElementById('ready-waiting-text'),
 
         // Game 2 (Math Gameplay) Elements
         viewGameplayMath: document.getElementById('view-gameplay-math'),
@@ -466,24 +471,20 @@ document.addEventListener('DOMContentLoaded', () => {
         // Step 1: Hide room info & switch view FIRST (always)
         if (elements.roomCreatedInfo) elements.roomCreatedInfo.classList.add('hidden');
         showView('setup-math');
-        console.log('[PREP] showView(setup-math) done');
 
-        // Step 2: Generate board
+        // Step 2: Generate full 100-cell board deterministically
         try {
-            if (mathGameEngine.mode === 'online' && peerManager.roomCode) {
-                mathGameEngine.myBoard = mathGameEngine.generateRandom100Board(peerManager.roomCode);
-                console.log('[PREP] Board generated for online mode');
-                if (elements.selectTimeLimit) {
-                    elements.selectTimeLimit.disabled = !peerManager.isHost;
-                }
-            } else {
-                if (!mathGameEngine.myBoard || mathGameEngine.myBoard.includes(null)) {
-                    mathGameEngine.myBoard = mathGameEngine.generateRandom100Board();
-                }
-                if (elements.selectTimeLimit) elements.selectTimeLimit.disabled = false;
+            const seed = (mathGameEngine.mode === 'online' && peerManager.roomCode) ? peerManager.roomCode : null;
+            if (!Array.isArray(mathGameEngine.myBoard) || mathGameEngine.myBoard.length !== 100 || mathGameEngine.myBoard.includes(null)) {
+                mathGameEngine.myBoard = mathGameEngine.generateRandom100Board(seed);
+            }
+            console.log('[PREP] Board generated with 100 cells, seed:', seed);
+            if (elements.selectTimeLimit) {
+                elements.selectTimeLimit.disabled = (mathGameEngine.mode === 'online' && !peerManager.isHost);
             }
         } catch(e) {
             console.error('[PREP] Board generation error:', e);
+            mathGameEngine.myBoard = mathGameEngine.generateRandom100Board();
         }
 
         // Step 3: Render board
@@ -494,14 +495,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('[PREP] renderMathSetupBoard error:', e);
         }
 
-        // Step 4: Check ready state
-        try {
-            checkMathSetupReadyState();
-        } catch(e) {
-            console.error('[PREP] checkMathSetupReadyState error:', e);
-        }
-
-        // Step 5: Set time limit UI
+        // Step 4: Set time limit UI
         if (elements.selectTimeLimit) {
             elements.selectTimeLimit.value = mathGameEngine.timeLimit ? mathGameEngine.timeLimit.toString() : '200';
         }
@@ -543,14 +537,19 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         }
 
+        // Step 5: Update Ready Status UI
+        updateMathReadyUI();
+
         if (elements.btnReadyMath) {
-            elements.btnReadyMath.disabled = false;
-            elements.btnReadyMath.innerText = 'SẴN SÀNG';
+            elements.btnReadyMath.disabled = mathGameEngine.myReady;
+            elements.btnReadyMath.innerText = mathGameEngine.myReady ? 'ĐÃ SẴN SÀNG ✓' : 'SẴN SÀNG CHƠI';
             elements.btnReadyMath.onclick = () => {
                 soundEngine.playReady();
                 mathGameEngine.myReady = true;
                 elements.btnReadyMath.disabled = true;
                 elements.btnReadyMath.innerText = 'ĐÃ SẴN SÀNG ✓';
+
+                updateMathReadyUI();
 
                 if (mathGameEngine.mode === 'online') {
                     peerManager.sendData({
@@ -560,6 +559,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             sharedBoard: peerManager.isHost ? mathGameEngine.myBoard : null
                         }
                     });
+                } else {
+                    mathGameEngine.oppReady = true;
                 }
 
                 checkMathBothReadyToStart();
@@ -569,8 +570,53 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('[PREP] prepareMathSetupBoard complete');
     }
 
+    function updateMathReadyUI() {
+        if (mathGameEngine.mode !== 'online') {
+            if (elements.mathReadyStatus) elements.mathReadyStatus.classList.add('hidden');
+            return;
+        }
+
+        if (elements.mathReadyStatus) elements.mathReadyStatus.classList.remove('hidden');
+
+        const myReady = mathGameEngine.myReady;
+        const oppReady = mathGameEngine.oppReady;
+
+        const count = (myReady ? 1 : 0) + (oppReady ? 1 : 0);
+
+        if (elements.readyCountText) {
+            elements.readyCountText.innerText = `${count}/2 người chơi đã sẵn sàng`;
+        }
+
+        if (elements.readyDotMe) {
+            elements.readyDotMe.classList.toggle('active', myReady);
+        }
+
+        if (elements.readyDotOpp) {
+            elements.readyDotOpp.classList.toggle('active', oppReady);
+        }
+
+        if (elements.readyWaitingText) {
+            if (myReady && oppReady) {
+                elements.readyWaitingText.innerText = '⚡ Cả 2 đã sẵn sàng! Đang bắt đầu...';
+                elements.readyWaitingText.style.color = 'var(--neon-green)';
+            } else if (myReady && !oppReady) {
+                elements.readyWaitingText.innerText = '⏳ Bạn đã sẵn sàng. Đang chờ đối thủ...';
+                elements.readyWaitingText.style.color = 'var(--text-muted)';
+            } else if (!myReady && oppReady) {
+                elements.readyWaitingText.innerText = '🔔 Đối thủ đã sẵn sàng! Bấm nút bên dưới để bắt đầu.';
+                elements.readyWaitingText.style.color = 'var(--primary-cyan)';
+            } else {
+                elements.readyWaitingText.innerText = 'Đang chờ 2 người chơi bấm sẵn sàng...';
+                elements.readyWaitingText.style.color = 'var(--text-muted)';
+            }
+        }
+    }
+
     function renderMathSetupBoard() {
+        if (!elements.setupBoardMath) return;
         elements.setupBoardMath.innerHTML = '';
+        if (!Array.isArray(mathGameEngine.myBoard) || mathGameEngine.myBoard.length === 0) return;
+
         mathGameEngine.myBoard.forEach((cell, index) => {
             const cellEl = document.createElement('div');
             cellEl.className = `math-cell ${cell ? 'filled' : ''}`;
@@ -603,12 +649,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function checkMathSetupReadyState() {
         const isValid = Array.isArray(mathGameEngine.myBoard) && mathGameEngine.myBoard.filter(c => c !== null).length === 100;
-        elements.btnReadyMath.disabled = !isValid || mathGameEngine.myReady;
+        if (elements.btnReadyMath) {
+            elements.btnReadyMath.disabled = !isValid || mathGameEngine.myReady;
+        }
+        updateMathReadyUI();
     }
 
     function checkMathBothReadyToStart() {
+        updateMathReadyUI();
         if (mathGameEngine.myReady && mathGameEngine.oppReady) {
-            startMathMatch();
+            console.log('[MATH] Both players ready! Starting match...');
+            setTimeout(() => {
+                startMathMatch();
+            }, 600);
         }
     }
 
@@ -1423,7 +1476,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
 
-            showToast('Đối thủ đã sẵn sàng Trò 2!');
+            showToast('Đối thủ đã bấm Sẵn sàng!');
+            updateMathReadyUI();
             checkMathBothReadyToStart();
         } else if (type === 'GAME2_REQUEST_SYNC') {
             // Guest requested Host to send current shared board
