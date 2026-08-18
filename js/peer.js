@@ -17,14 +17,15 @@ class PeerManager {
         this.onError = null;
     }
 
-    // Generate random 6-character room code (e.g., BNG-8X92)
+    // Generate random 6-digit numeric room code (e.g., 847293)
     generateRoomCode() {
-        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
         let code = '';
-        for (let i = 0; i < 4; i++) {
-            code += chars.charAt(Math.floor(Math.random() * chars.length));
+        for (let i = 0; i < 6; i++) {
+            code += Math.floor(Math.random() * 10).toString();
         }
-        return `BNG-${code}`;
+        // Ensure no leading zero
+        if (code[0] === '0') code = '1' + code.slice(1);
+        return code;
     }
 
     // Format full PeerJS ID prefix

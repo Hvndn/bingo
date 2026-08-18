@@ -1268,13 +1268,14 @@ body {
 .math-cell {
     background: var(--cell-bg);
     border: 1px solid var(--cell-border);
-    border-radius: 8px;
+    border-radius: 6px;
     display: flex;
     justify-content: center;
     align-items: center;
     font-family: var(--font-heading);
-    font-weight: 800;
-    font-size: 0.72rem;
+    font-weight: 700;
+    /* Auto-shrink: from 0.6rem down to 0.4rem based on container */
+    font-size: clamp(0.4rem, 1.4vw, 0.65rem);
     color: var(--cell-text);
     box-shadow: var(--cell-shadow);
     cursor: pointer;
@@ -1282,7 +1283,11 @@ body {
     position: relative;
     overflow: hidden;
     text-align: center;
-    padding: 2px;
+    padding: 2px 1px;
+    line-height: 1.2;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
 }
 
 .setup-math-grid .math-cell:hover {
@@ -1822,5 +1827,34 @@ body {
     font-size: 0.8rem;
     font-weight: 700;
     color: var(--text-muted);
+}
+
+/* ===== RESPONSIVE: Mobile Math Grid ===== */
+@media (max-width: 480px) {
+    .board-wrapper-10x10 {
+        max-width: 100%;
+    }
+
+    .math-grid {
+        gap: 2px;
+    }
+
+    .math-cell {
+        font-size: clamp(0.35rem, 2.5vw, 0.55rem);
+        border-radius: 4px;
+        padding: 1px;
+        line-height: 1.15;
+    }
+}
+
+@media (max-width: 360px) {
+    .math-cell {
+        font-size: clamp(0.3rem, 2.2vw, 0.45rem);
+        border-radius: 3px;
+    }
+
+    .math-grid {
+        gap: 1px;
+    }
 }
 
