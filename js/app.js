@@ -459,6 +459,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Prepare Math Game Setup Phase
     function prepareMathSetupBoard() {
+        if (elements.roomCreatedInfo) elements.roomCreatedInfo.classList.add('hidden');
         showView('setup-math');
 
         if (mathGameEngine.mode === 'online' && peerManager.roomCode) {
@@ -985,20 +986,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     elements.p2Name.innerText = 'ĐỐI THỦ (HOST)';
                 }
 
-                setTimeout(() => {
-                    if (currentGame === 'math') {
-                        prepareMathSetupBoard();
-                        if (peerManager.isHost) {
-                            // Host automatically sends generated board to Guest upon connection
-                            peerManager.sendData({
-                                type: 'GAME2_SYNC_BOARD',
-                                payload: { sharedBoard: mathGameEngine.myBoard, timeLimit: mathGameEngine.timeLimit }
-                            });
-                        }
-                    } else {
-                        prepareSetupBoard();
+                if (currentGame === 'math') {
+                    prepareMathSetupBoard();
+                    if (peerManager.isHost) {
+                        // Host automatically sends generated board to Guest upon connection
+                        peerManager.sendData({
+                            type: 'GAME2_SYNC_BOARD',
+                            payload: { sharedBoard: mathGameEngine.myBoard, timeLimit: mathGameEngine.timeLimit }
+                        });
                     }
-                }, 800);
+                } else {
+                    prepareSetupBoard();
+                }
             } else if (status.state === 'CLOSED') {
                 showToast(status.message);
                 if (bingoEngine.gameStarted && !bingoEngine.gameOver) {
