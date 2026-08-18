@@ -297,7 +297,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 tab.classList.add('active');
                 const mode = tab.dataset.mode;
-                document.getElementById(`${mode}-controls`).classList.add('active');
+                const targetControls = document.getElementById(`${mode}-controls`);
+                if (targetControls) {
+                    targetControls.classList.add('active');
+                }
             });
         });
 
