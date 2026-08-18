@@ -99,17 +99,29 @@ class MathGameEngine {
         return { targetNum, expr };
     }
 
-    // Generate a shuffled 100-cell board (numbers 1-100, each with a unique math expr)
+    // Generate a shuffled 100-cell board (numbers 1-100, each with a unique target number & unique expression text)
     generateRandom100Board() {
         const nums = Array.from({ length: 100 }, (_, i) => i + 1);
         
-        // Fisher-Yates shuffle
+        // Fisher-Yates shuffle for target numbers 1-100
         for (let i = nums.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [nums[i], nums[j]] = [nums[j], nums[i]];
         }
 
-        return nums.map(n => this.generateMathExprFor(n));
+        const usedExprs = new Set();
+        return nums.map(n => {
+            let item;
+            let attempts = 0;
+            // Ensure unique expression string
+            do {
+                item = this.generateMathExprFor(n);
+                attempts++;
+            } while (usedExprs.has(item.expr) && attempts < 20);
+            
+            usedExprs.add(item.expr);
+            return item;
+        });
     }
 
     // Restore board from serialized data (used when host syncs board to guest)
@@ -139,10 +151,19 @@ class MathGameEngine {
             [unassignedNums[i], unassignedNums[j]] = [unassignedNums[j], unassignedNums[i]];
         }
 
+        const usedExprs = new Set(currentBoard.filter(c => c !== null).map(c => c.expr));
         let uIdx = 0;
         return currentBoard.map(cell => {
             if (cell !== null && cell.targetNum >= 1 && cell.targetNum <= 100) return cell;
-            return this.generateMathExprFor(unassignedNums[uIdx++]);
+            const targetNum = unassignedNums[uIdx++];
+            let item;
+            let attempts = 0;
+            do {
+                item = this.generateMathExprFor(targetNum);
+                attempts++;
+            } while (usedExprs.has(item.expr) && attempts < 20);
+            usedExprs.add(item.expr);
+            return item;
         });
     }
 
