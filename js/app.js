@@ -110,6 +110,11 @@ document.addEventListener('DOMContentLoaded', () => {
         p1ScoreText: document.getElementById('p1-score-text'),
         p2ScoreText: document.getElementById('p2-score-text'),
         promptBanner: document.getElementById('prompt-banner'),
+        promptedNumbersList: document.getElementById('prompted-numbers-list'),
+        btnOpenMatrix: document.getElementById('btn-open-matrix'),
+        modalMatrix100: document.getElementById('modal-matrix-100'),
+        btnCloseMatrix: document.getElementById('btn-close-matrix'),
+        matrixGrid100: document.getElementById('matrix-grid-100'),
         gameplayBoardMath: document.getElementById('gameplay-board-math'),
         
         toastContainer: document.getElementById('toast-container')
@@ -237,6 +242,18 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.btnCloseRules.addEventListener('click', () => {
             soundEngine.playClick();
             elements.modalRules.classList.add('hidden');
+        });
+
+        // Quick Matrix 100 Modal Handlers
+        elements.btnOpenMatrix.addEventListener('click', () => {
+            soundEngine.playClick();
+            elements.modalMatrix100.classList.remove('hidden');
+            renderMatrixGrid100();
+        });
+
+        elements.btnCloseMatrix.addEventListener('click', () => {
+            soundEngine.playClick();
+            elements.modalMatrix100.classList.add('hidden');
         });
 
         // Mode Tabs
@@ -500,12 +517,25 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Update Math UI & Clocks
+    // Update Math UI & Clocks & Prompt History Chips
     function updateMathUI() {
         elements.p1TimerText.innerText = `${mathGameEngine.p1TimeLeft}s`;
         elements.p2TimerText.innerText = `${mathGameEngine.p2TimeLeft}s`;
         elements.p1ScoreText.innerText = `ĐIỂM: ${mathGameEngine.p1Score}`;
         elements.p2ScoreText.innerText = `ĐIỂM: ${mathGameEngine.p2Score}`;
+
+        // Update Prompt History List Chips (Luật 1)
+        const hist = mathGameEngine.promptHistory || [];
+        const histHeader = elements.promptedNumbersList.previousElementSibling;
+        if (histHeader) {
+            histHeader.querySelector('span').innerHTML = `<i class="fa-solid fa-list-check"></i> ĐÃ ĐỐ (${hist.length}/100 SỐ):`;
+        }
+
+        if (hist.length === 0) {
+            elements.promptedNumbersList.innerHTML = '<span class="chip-empty">Chưa có số nào được đố</span>';
+        } else {
+            elements.promptedNumbersList.innerHTML = hist.map(num => `<span class="num-chip">#${num}</span>`).join('');
+        }
 
         // Clock active highlighting
         if (mathGameEngine.currentPhase === 'FIND') {
@@ -542,8 +572,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         showToast('Vui lòng nhập số đố từ 1 đến 100!');
                         return;
                     }
-                    if (mathGameEngine.foundNumbers.has(val)) {
-                        showToast(`Số ${val} đã được tìm thấy trước đó rồi!`);
+                    if (mathGameEngine.foundNumbers.has(val) || mathGameEngine.promptHistory.includes(val)) {
+                        soundEngine.playClick();
+                        showToast(`⛔ SỐ [ ${val} ] ĐÃ ĐƯỢC ĐỐ RỒI! Vui lòng chọn số khác!`);
+                        inputPrompt.value = '';
                         return;
                     }
 
@@ -588,39 +620,41 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Countdown Timer Loop for Game 2
-    function startMathTimerLoop() {
-        if (mathGameEngine.timerInterval) {
-            clearInterval(mathGameEngine.timerInterval);
+    // Render Quick Matrix 1-100 Modal (Luật 3)
+    function renderMatrixGrid100() {
+        elements.matrixGrid100.innerHTML = '';
+        for (let i = 1; i <= 100; i++) {
+            const isDone = mathGameEngine.foundNumbers.has(i) || mathGameEngine.promptHistory.includes(i);
+            const cell = document.createElement('div');
+            cell.className = `matrix-num-cell ${isDone ? 'done' : ''}`;
+            cell.innerText = i;
+
+            if (!isDone) {
+                cell.onclick = () => {
+                    soundEngine.playClick();
+                    const inputTargetPrompt = document.getElementById('input-target-prompt');
+                    if (inputTargetPrompt && mathGameEngine.currentPhase === 'PROMPT' && mathGameEngine.currentAttacker === mathGameEngine.myRole) {
+                        inputTargetPrompt.value = i;
+                        elements.modalMatrix100.classList.add('hidden');
+                        showToast(`Đã chọn nhanh số đố: ${i}`);
+                    }
+                };
+            }
+
+            elements.matrixGrid100.appendChild(cell);
         }
-
-        mathGameEngine.timerInterval = setInterval(() => {
-            if (!mathGameEngine.gameStarted || mathGameEngine.gameOver || mathGameEngine.currentPhase !== 'FIND') {
-                return;
-            }
-
-            if (mathGameEngine.currentDefender === 'p1') {
-                mathGameEngine.p1TimeLeft--;
-            } else {
-                mathGameEngine.p2TimeLeft--;
-            }
-
-            elements.p1TimerText.innerText = `${mathGameEngine.p1TimeLeft}s`;
-            elements.p2TimerText.innerText = `${mathGameEngine.p2TimeLeft}s`;
-
-            // Check Win/Loss by Time Expiration
-            const winRes = mathGameEngine.checkWinCondition();
-            if (winRes) {
-                clearInterval(mathGameEngine.timerInterval);
-                mathGameEngine.gameOver = true;
-                showGameOverModal(winRes, mathGameEngine.p1Score, mathGameEngine.p2Score);
-            }
-        }, 1000);
     }
 
-    // Handle Cell Selection in Game 2
+    // Handle Cell Selection in Game 2 with Anti-Spam (Luật 2)
     function handleMathCellClick(cellIndex) {
         if (mathGameEngine.currentPhase !== 'FIND' || mathGameEngine.gameOver) return;
+        
+        if (mathGameEngine.isSpamLocked) {
+            soundEngine.playClick();
+            showToast('⚠️ Đang bị khóa 3 giây do bấm sai liên tục quá 3 lần!');
+            return;
+        }
+
         if (mathGameEngine.currentDefender !== mathGameEngine.myRole) {
             showToast('Đang là lượt đố/tìm của đối thủ!');
             return;
@@ -650,7 +684,23 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             soundEngine.playClick();
             const cell = mathGameEngine.myBoard[cellIndex];
-            showToast(`Phép tính "${cell.expr}" có kết quả = ${cell.targetNum}, không phải ${mathGameEngine.currentTargetNum}! Tìm tiếp nào!`);
+            
+            if (res.wrongStreak >= 3) {
+                // Anti-Spam Penalty triggered! (Luật 2)
+                soundEngine.playLose();
+                mathGameEngine.isSpamLocked = true;
+                elements.viewGameplayMath.classList.add('spam-warning-active');
+                showToast('⚠️ CẢNH BÁO SPAM! Bạn đã chọn sai 3 lần liên tiếp. Tạm khóa 3 giây!');
+
+                setTimeout(() => {
+                    mathGameEngine.isSpamLocked = false;
+                    mathGameEngine.wrongClickStreak = 0;
+                    elements.viewGameplayMath.classList.remove('spam-warning-active');
+                    showToast('Đã mở khóa thao tác!');
+                }, 3000);
+            } else {
+                showToast(`Phép tính "${cell.expr}" có kết quả = ${cell.targetNum}, không phải ${mathGameEngine.currentTargetNum}! (Cảnh báo sai ${res.wrongStreak}/3)`);
+            }
         }
     }
 

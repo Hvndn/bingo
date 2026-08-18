@@ -28,6 +28,10 @@ class MathGameEngine {
         
         this.markedCells = new Map(); // cellIndex -> 'p1' | 'p2'
         this.foundNumbers = new Set(); // Set of target numbers already found
+        this.promptHistory = []; // Array of prompted target numbers in order
+
+        this.wrongClickStreak = 0; // Count consecutive wrong clicks
+        this.isSpamLocked = false; // Anti-spam lock flag (3s penalty)
 
         this.myReady = false;
         this.oppReady = false;
@@ -54,7 +58,6 @@ class MathGameEngine {
             const a = targetNum + b;
             exprStr = `${a} - ${b}`;
         } else if (chosenType === 'mul') {
-            // Find factors of targetNum if possible
             const factors = [];
             for (let i = 1; i <= Math.sqrt(targetNum); i++) {
                 if (targetNum % i === 0) factors.push(i);
@@ -148,18 +151,26 @@ class MathGameEngine {
 
         this.currentTargetNum = number;
         this.currentPhase = 'FIND';
+        
+        // Record into history
+        if (!this.promptHistory.includes(number)) {
+            this.promptHistory.push(number);
+        }
+
         return true;
     }
 
     // Attempt cell selection by defender
     selectCell(cellIndex, playerRole) {
-        if (this.currentPhase !== 'FIND' || this.gameOver) return false;
+        if (this.currentPhase !== 'FIND' || this.gameOver || this.isSpamLocked) return false;
 
         const cell = this.myBoard[cellIndex];
         if (!cell) return false;
 
         if (cell.targetNum === this.currentTargetNum) {
-            // Correct match found!
+            // Correct match found! Reset wrong click streak
+            this.wrongClickStreak = 0;
+
             this.markedCells.set(cellIndex, playerRole);
             this.foundNumbers.add(this.currentTargetNum);
 
@@ -173,9 +184,11 @@ class MathGameEngine {
             this.currentTargetNum = null;
 
             return { success: true, cellIndex, playerRole, isComplete: this.foundNumbers.size === 100 };
+        } else {
+            // Wrong click! Increment wrong streak
+            this.wrongClickStreak++;
+            return { success: false, wrongStreak: this.wrongClickStreak };
         }
-
-        return { success: false };
     }
 
     // Evaluate Win Condition

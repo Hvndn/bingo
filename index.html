@@ -351,6 +351,19 @@
                     <!-- Dynamic Attacker Input or Defender Search Prompt -->
                 </div>
 
+                <!-- Prompted Numbers History Bar -->
+                <div class="prompted-history-bar glass-panel">
+                    <div class="prompted-history-header">
+                        <span><i class="fa-solid fa-list-check"></i> ĐÃ ĐỐ (${0}/100 SỐ):</span>
+                        <button id="btn-open-matrix" class="btn btn-xs btn-outline-cyan" title="Tra cứu 100 số nhanh">
+                            <i class="fa-solid fa-grid-2"></i> Xem 100 Số
+                        </button>
+                    </div>
+                    <div id="prompted-numbers-list" class="prompted-numbers-chips">
+                        <span class="chip-empty">Chưa có số nào được đố</span>
+                    </div>
+                </div>
+
                 <!-- Main Game Board 10x10 -->
                 <div class="board-wrapper-10x10">
                     <div id="gameplay-board-math" class="math-grid play-math-grid">
@@ -456,6 +469,20 @@
                         <li><strong>Bước 4: Tạo hàng Bingo</strong> — Một hàng ngang, hàng dọc hoặc đường chéo có đủ 5 số tô màu sẽ tính là 1 hàng Bingo. Mỗi hàng hoàn thành sẽ làm sáng 1 chữ cái trong <strong>B - I - N - G - O</strong>.</li>
                         <li><strong>Bước 5: Chiến thắng</strong> — Người đầu tiên tích đủ 5 hàng Bingo (sáng trọn bộ chữ B-I-N-G-O) sẽ dành chiến thắng!</li>
                     </ol>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Quick Matrix 1-100 Checker -->
+        <div id="modal-matrix-100" class="modal-overlay hidden">
+            <div class="modal-content glass-panel matrix-modal">
+                <div class="modal-header">
+                    <h2><i class="fa-solid fa-table-cells"></i> MA TRẬN TRA CỨU SỐ (1-100)</h2>
+                    <button id="btn-close-matrix" class="icon-btn"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <p class="matrix-desc">Các số <span class="badge-done">ĐÃ ĐỐ</span> sẽ bị gạch mở. Nhấp vào số <span class="badge-available">CÒN TRỐNG</span> để chọn đố nhanh!</p>
+                <div id="matrix-grid-100" class="matrix-grid-100">
+                    <!-- 100 cells generated dynamically -->
                 </div>
             </div>
         </div>

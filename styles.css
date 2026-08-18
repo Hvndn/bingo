@@ -1444,6 +1444,141 @@ body {
     outline: none;
 }
 
+/* Prompted Numbers History Bar */
+.prompted-history-bar {
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    background: var(--grid-bg);
+    border: 1px solid var(--border-glass);
+    border-radius: 12px;
+}
+
+.prompted-history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+
+.btn-outline-cyan {
+    background: transparent;
+    border: 1px solid var(--primary-cyan);
+    color: var(--primary-cyan);
+    font-weight: 800;
+    font-size: 0.72rem;
+    padding: 3px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.prompted-numbers-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    max-height: 54px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.num-chip {
+    background: rgba(2, 132, 199, 0.15);
+    border: 1px solid var(--primary-cyan);
+    color: var(--primary-cyan);
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.chip-empty {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+/* Quick Matrix 100 Modal */
+.matrix-modal {
+    max-width: 420px;
+}
+
+.matrix-desc {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+}
+
+.badge-done {
+    color: var(--text-muted);
+    text-decoration: line-through;
+    font-weight: 800;
+}
+
+.badge-available {
+    color: var(--neon-green);
+    font-weight: 800;
+}
+
+.matrix-grid-100 {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 4px;
+    max-height: 340px;
+    overflow-y: auto;
+}
+
+.matrix-num-cell {
+    aspect-ratio: 1 / 1;
+    background: var(--bg-card);
+    border: 1px solid var(--border-glass);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 0.75rem;
+    color: var(--text-main);
+    cursor: pointer;
+    transition: var(--transition-bounce);
+}
+
+.matrix-num-cell:hover:not(.done) {
+    background: rgba(22, 163, 74, 0.2);
+    border-color: var(--neon-green);
+    color: var(--neon-green);
+    transform: scale(1.1);
+}
+
+.matrix-num-cell.done {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: transparent;
+    color: var(--text-muted);
+    opacity: 0.4;
+    text-decoration: line-through;
+    cursor: not-allowed;
+}
+
+/* Anti-Spam Warning Animation */
+.spam-warning-active {
+    animation: shakeWarning 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    border-color: var(--accent-magenta) !important;
+    box-shadow: 0 0 20px var(--magenta-glow) !important;
+}
+
+@keyframes shakeWarning {
+    10%, 90% { transform: translate3d(-2px, 0, 0); }
+    20%, 80% { transform: translate3d(4px, 0, 0); }
+    30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+    40%, 60% { transform: translate3d(6px, 0, 0); }
+}
+
 /* History Modal & Cards */
 .history-modal {
     max-width: 460px;
