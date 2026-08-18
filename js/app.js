@@ -463,6 +463,7 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.btnCallBingo.addEventListener('click', () => {
                 claimBingoVictory();
             });
+        } // End of bindEvents()
 
     // Prepare Math Game Setup Phase
     function prepareMathSetupBoard() {
@@ -531,35 +532,43 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Update Ready Status UI
-        updateMathReadyUI();
+        try {
+            updateMathReadyUI();
+        } catch(e) {
+            console.error('[PREP] updateMathReadyUI error:', e);
+        }
 
         // Setup Ready Button Click
-        const btnReady = elements.btnReadyMath || document.getElementById('btn-ready-math');
-        if (btnReady) {
-            btnReady.disabled = mathGameEngine.myReady;
-            btnReady.innerText = mathGameEngine.myReady ? 'ĐÃ SẴN SÀNG ✓' : 'SẴN SÀNG CHƠI';
-            btnReady.onclick = () => {
-                soundEngine.playReady();
-                mathGameEngine.myReady = true;
-                btnReady.disabled = true;
-                btnReady.innerText = 'ĐÃ SẴN SÀNG ✓';
+        try {
+            const btnReady = elements.btnReadyMath || document.getElementById('btn-ready-math');
+            if (btnReady) {
+                btnReady.disabled = mathGameEngine.myReady;
+                btnReady.innerText = mathGameEngine.myReady ? 'ĐÃ SẴN SÀNG ✓' : 'SẴN SÀNG CHƠI';
+                btnReady.onclick = () => {
+                    soundEngine.playReady();
+                    mathGameEngine.myReady = true;
+                    btnReady.disabled = true;
+                    btnReady.innerText = 'ĐÃ SẴN SÀNG ✓';
 
-                updateMathReadyUI();
+                    try { updateMathReadyUI(); } catch(e) {}
 
-                if (mathGameEngine.mode === 'online') {
-                    peerManager.sendData({
-                        type: 'GAME2_PLAYER_READY',
-                        payload: {
-                            timeLimit: mathGameEngine.timeLimit,
-                            sharedBoard: peerManager.isHost ? mathGameEngine.myBoard : null
-                        }
-                    });
-                } else {
-                    mathGameEngine.oppReady = true;
-                }
+                    if (mathGameEngine.mode === 'online') {
+                        peerManager.sendData({
+                            type: 'GAME2_PLAYER_READY',
+                            payload: {
+                                timeLimit: mathGameEngine.timeLimit,
+                                sharedBoard: peerManager.isHost ? mathGameEngine.myBoard : null
+                            }
+                        });
+                    } else {
+                        mathGameEngine.oppReady = true;
+                    }
 
-                checkMathBothReadyToStart();
-            };
+                    checkMathBothReadyToStart();
+                };
+            }
+        } catch(e) {
+            console.error('[PREP] btnReady setup error:', e);
         }
         
         console.log('[PREP] prepareMathSetupBoard complete');
@@ -568,11 +577,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateMathReadyUI() {
         const readyStatusEl = elements.mathReadyStatus || document.getElementById('math-ready-status');
         if (mathGameEngine.mode !== 'online') {
-            if (readyStatusEl) readyStatusEl.classList.add('hidden');
+            if (readyStatusEl && readyStatusEl.classList) readyStatusEl.classList.add('hidden');
             return;
         }
 
-        if (readyStatusEl) readyStatusEl.classList.remove('hidden');
+        if (readyStatusEl && readyStatusEl.classList) readyStatusEl.classList.remove('hidden');
 
         const myReady = mathGameEngine.myReady;
         const oppReady = mathGameEngine.oppReady;
@@ -585,12 +594,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const dotMeEl = elements.readyDotMe || document.getElementById('ready-dot-me');
-        if (dotMeEl) {
+        if (dotMeEl && dotMeEl.classList) {
             dotMeEl.classList.toggle('active', myReady);
         }
 
         const dotOppEl = elements.readyDotOpp || document.getElementById('ready-dot-opp');
-        if (dotOppEl) {
+        if (dotOppEl && dotOppEl.classList) {
             dotOppEl.classList.toggle('active', oppReady);
         }
 
@@ -598,16 +607,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (waitingTextEl) {
             if (myReady && oppReady) {
                 waitingTextEl.innerText = '⚡ Cả 2 đã sẵn sàng! Đang bắt đầu...';
-                waitingTextEl.style.color = 'var(--neon-green)';
+                if (waitingTextEl.style) waitingTextEl.style.color = 'var(--neon-green)';
             } else if (myReady && !oppReady) {
                 waitingTextEl.innerText = '⏳ Bạn đã sẵn sàng. Đang chờ đối thủ...';
-                waitingTextEl.style.color = 'var(--text-muted)';
+                if (waitingTextEl.style) waitingTextEl.style.color = 'var(--text-muted)';
             } else if (!myReady && oppReady) {
                 waitingTextEl.innerText = '🔔 Đối thủ đã sẵn sàng! Bấm nút bên dưới để bắt đầu.';
-                waitingTextEl.style.color = 'var(--primary-cyan)';
+                if (waitingTextEl.style) waitingTextEl.style.color = 'var(--primary-cyan)';
             } else {
                 waitingTextEl.innerText = 'Đang chờ 2 người chơi bấm sẵn sàng...';
-                waitingTextEl.style.color = 'var(--text-muted)';
+                if (waitingTextEl.style) waitingTextEl.style.color = 'var(--text-muted)';
             }
         }
     }
@@ -1039,7 +1048,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             showView('lobby');
         });
-    }
 
     // Peer Manager Callbacks Setup
         peerManager.onStatusChange = (status) => {
