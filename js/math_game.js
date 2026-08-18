@@ -42,13 +42,36 @@ class MathGameEngine {
     }
 
     // Generate math expression for a given target number N (1-100)
+    // Seeded pseudo-random generator (Mulberry32)
+    createRandomGenerator(seedInput) {
+        let seed = 12345;
+        if (typeof seedInput === 'number' && !isNaN(seedInput)) {
+            seed = seedInput;
+        } else if (typeof seedInput === 'string' && seedInput.length > 0) {
+            seed = 0;
+            for (let i = 0; i < seedInput.length; i++) {
+                seed = (seed << 5) - seed + seedInput.charCodeAt(i);
+                seed |= 0;
+            }
+        } else {
+            seed = Math.floor(Math.random() * 1000000);
+        }
+
+        return function() {
+            let t = seed += 0x6D2B79F5;
+            t = Math.imul(t ^ (t >>> 15), t | 1);
+            t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+    }
+
     // ALL operands guaranteed to stay within 1-100 range
-    generateMathExprFor(targetNum) {
+    generateMathExprFor(targetNum, rng = Math.random) {
         const candidates = [];
 
         // --- Addition: a + b = targetNum, both a,b in [1,99] ---
         if (targetNum >= 2) {
-            const a = Math.floor(Math.random() * (targetNum - 1)) + 1; // 1..targetNum-1
+            const a = Math.floor(rng() * (targetNum - 1)) + 1; // 1..targetNum-1
             const b = targetNum - a; // also 1..targetNum-1
             candidates.push(`${a} + ${b}`);
         }
@@ -57,7 +80,7 @@ class MathGameEngine {
         // a = targetNum + b, need a <= 100, so b <= 100 - targetNum
         if (100 - targetNum >= 1) {
             const maxB = 100 - targetNum;
-            const b = Math.floor(Math.random() * maxB) + 1; // 1..maxB
+            const b = Math.floor(rng() * maxB) + 1; // 1..maxB
             const a = targetNum + b; // guaranteed <= 100
             candidates.push(`${a} - ${b}`);
         }
@@ -71,7 +94,7 @@ class MathGameEngine {
             }
         }
         if (factors.length > 0) {
-            const [a, b] = factors[Math.floor(Math.random() * factors.length)];
+            const [a, b] = factors[Math.floor(rng() * factors.length)];
             if (a !== 1 || b !== 1) { // avoid "1 × N" if possible
                 candidates.push(`${a} × ${b}`);
             }
@@ -84,28 +107,28 @@ class MathGameEngine {
             if (a <= 100) divPairs.push([a, k]);
         }
         if (divPairs.length > 0) {
-            const [a, k] = divPairs[Math.floor(Math.random() * divPairs.length)];
+            const [a, k] = divPairs[Math.floor(rng() * divPairs.length)];
             candidates.push(`${a} ÷ ${k}`);
         }
 
-        // Pick a random candidate expression
+        // Pick a candidate expression deterministically via rng
         if (candidates.length === 0) {
-            // Fallback safe addition
             const a = Math.max(1, targetNum - 1);
             return { targetNum, expr: `${a} + ${targetNum - a}` };
         }
 
-        const expr = candidates[Math.floor(Math.random() * candidates.length)];
+        const expr = candidates[Math.floor(rng() * candidates.length)];
         return { targetNum, expr };
     }
 
-    // Generate a shuffled 100-cell board (numbers 1-100, each with a unique target number & unique expression text)
-    generateRandom100Board() {
+    // Generate a deterministic 100-cell board using optional seed (e.g. roomCode)
+    generateRandom100Board(seedInput = null) {
+        const rng = this.createRandomGenerator(seedInput);
         const nums = Array.from({ length: 100 }, (_, i) => i + 1);
         
-        // Fisher-Yates shuffle for target numbers 1-100
+        // Fisher-Yates shuffle with seeded RNG
         for (let i = nums.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
+            const j = Math.floor(rng() * (i + 1));
             [nums[i], nums[j]] = [nums[j], nums[i]];
         }
 
@@ -113,9 +136,8 @@ class MathGameEngine {
         return nums.map(n => {
             let item;
             let attempts = 0;
-            // Ensure unique expression string
             do {
-                item = this.generateMathExprFor(n);
+                item = this.generateMathExprFor(n, rng);
                 attempts++;
             } while (usedExprs.has(item.expr) && attempts < 20);
             

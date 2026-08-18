@@ -318,6 +318,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 elements.displayRoomCode.innerText = roomCode;
                 elements.roomCreatedInfo.classList.remove('hidden');
                 elements.connectionStatusText.innerText = 'Đang chờ đối thủ nhập mã phòng...';
+
+                if (currentGame === 'math') {
+                    // Seed board using Room Code for deterministic match across both devices
+                    mathGameEngine.myBoard = mathGameEngine.generateRandom100Board(roomCode);
+                }
             });
         });
 
@@ -352,6 +357,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 mathGameEngine.resetState();
                 mathGameEngine.mode = 'online';
                 mathGameEngine.myRole = 'p2';
+                // Seed board using Room Code for deterministic match across both devices
+                mathGameEngine.myBoard = mathGameEngine.generateRandom100Board(code);
             } else {
                 bingoEngine.resetState();
                 bingoEngine.mode = 'online';
@@ -432,26 +439,20 @@ document.addEventListener('DOMContentLoaded', () => {
     function prepareMathSetupBoard() {
         showView('setup-math');
 
-        const isOnlineGuest = mathGameEngine.mode === 'online' && !peerManager.isHost;
-
-        if (isOnlineGuest) {
-            // Guest always receives board from Host
-            peerManager.sendData({ type: 'GAME2_REQUEST_SYNC' });
-            elements.selectTimeLimit.disabled = true;
+        if (mathGameEngine.mode === 'online' && peerManager.roomCode) {
+            // Both Host and Guest deterministically generate identical board using roomCode seed
+            mathGameEngine.myBoard = mathGameEngine.generateRandom100Board(peerManager.roomCode);
+            if (!peerManager.isHost) {
+                elements.selectTimeLimit.disabled = true;
+            } else {
+                elements.selectTimeLimit.disabled = false;
+            }
         } else {
-            // Host / Local / AI generates the single shared board if not generated yet
+            // Local / AI mode
             if (!mathGameEngine.myBoard || mathGameEngine.myBoard.includes(null)) {
                 mathGameEngine.myBoard = mathGameEngine.generateRandom100Board();
             }
             elements.selectTimeLimit.disabled = false;
-
-            // If Host in online mode, broadcast board to guest immediately
-            if (mathGameEngine.mode === 'online' && peerManager.isHost) {
-                peerManager.sendData({
-                    type: 'GAME2_SYNC_BOARD',
-                    payload: { sharedBoard: mathGameEngine.myBoard, timeLimit: mathGameEngine.timeLimit }
-                });
-            }
         }
 
         renderMathSetupBoard();
