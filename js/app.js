@@ -438,6 +438,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 elements.p1Name.innerText = 'PLAYER 1';
                 elements.p2Name.innerText = 'PLAYER 2';
                 startMatch();
+            }
+        });
+
         // Manual Number Calling
         elements.btnCallNumber.addEventListener('click', () => {
             submitManualCallNumber();
@@ -967,8 +970,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             showView('lobby');
         });
+    }
 
-        // Peer Manager Callbacks Setup
+    // Peer Manager Callbacks Setup
         peerManager.onStatusChange = (status) => {
             console.log('Network Status:', status);
             if (status.state === 'CONNECTED') {
@@ -1010,7 +1014,6 @@ document.addEventListener('DOMContentLoaded', () => {
         peerManager.onError = (msg) => {
             showToast(msg);
         };
-    }
 
     // Prepare Setup Phase
     function prepareSetupBoard() {
@@ -1543,3 +1546,4 @@ document.addEventListener('DOMContentLoaded', () => {
     // Run Initialization
     init();
 });
+
