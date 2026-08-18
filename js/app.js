@@ -438,9 +438,28 @@ document.addEventListener('DOMContentLoaded', () => {
         renderMathSetupBoard();
         checkMathSetupReadyState();
 
-        elements.selectTimeLimit.value = mathGameEngine.timeLimit.toString();
+        elements.selectTimeLimit.value = '200'; // Default
+        mathGameEngine.timeLimit = 200;
+
+        const customWrapper = document.getElementById('custom-time-wrapper');
+        const inputCustomTime = document.getElementById('input-custom-time');
+
         elements.selectTimeLimit.onchange = () => {
-            mathGameEngine.timeLimit = parseInt(elements.selectTimeLimit.value);
+            const val = elements.selectTimeLimit.value;
+            if (val === 'custom') {
+                customWrapper.classList.remove('hidden');
+                inputCustomTime.focus();
+            } else {
+                customWrapper.classList.add('hidden');
+                mathGameEngine.timeLimit = parseInt(val);
+            }
+        };
+
+        inputCustomTime.oninput = () => {
+            const customVal = parseInt(inputCustomTime.value);
+            if (!isNaN(customVal) && customVal >= 10 && customVal <= 3600) {
+                mathGameEngine.timeLimit = customVal;
+            }
         };
 
         elements.btnAutoFillMath.onclick = () => {

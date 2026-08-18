@@ -1742,3 +1742,85 @@ body {
     to   { opacity: 1;   transform: scale(1.08); }
 }
 
+/* ===== CUSTOM TIME INPUT (Game 2 Setup) ===== */
+.time-limit-box {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.time-label {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.time-input-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.time-select {
+    background: var(--grid-bg);
+    border: 1px solid var(--border-glass);
+    border-radius: 10px;
+    color: var(--text-main);
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 8px 12px;
+    cursor: pointer;
+    outline: none;
+    transition: var(--transition-fast);
+}
+
+.time-select:focus {
+    border-color: var(--primary-cyan);
+    box-shadow: 0 0 8px var(--primary-glow);
+}
+
+.custom-time-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    animation: fadeIn 0.25s ease;
+}
+
+.custom-time-wrapper.hidden {
+    display: none;
+}
+
+.custom-time-input {
+    background: var(--grid-bg);
+    border: 1.5px solid var(--primary-cyan);
+    border-radius: 10px;
+    color: var(--text-main);
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 8px 12px;
+    width: 140px;
+    outline: none;
+    transition: var(--transition-fast);
+    box-shadow: 0 0 8px var(--primary-glow);
+}
+
+.custom-time-input:focus {
+    border-color: var(--gold-yellow);
+    box-shadow: 0 0 10px var(--gold-glow);
+}
+
+.custom-time-unit {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-muted);
+}
+

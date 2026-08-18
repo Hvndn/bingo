@@ -290,14 +290,22 @@
 
                 <!-- Time Limit Selector -->
                 <div class="time-limit-box">
-                    <span class="time-label"><i class="fa-solid fa-stopwatch"></i> Quỹ thời gian thi đấu:</span>
-                    <select id="select-time-limit" class="time-select">
-                        <option value="100">100 Giây</option>
-                        <option value="200" selected>200 Giây</option>
-                        <option value="300">300 Giây</option>
-                        <option value="400">400 Giây</option>
-                        <option value="500">500 Giây</option>
-                    </select>
+                    <span class="time-label"><i class="fa-solid fa-stopwatch"></i> Thời gian thi đấu:</span>
+                    <div class="time-input-group">
+                        <select id="select-time-limit" class="time-select">
+                            <option value="60">60 Giây</option>
+                            <option value="100">100 Giây</option>
+                            <option value="200" selected>200 Giây</option>
+                            <option value="300">300 Giây</option>
+                            <option value="500">500 Giây</option>
+                            <option value="custom">✏️ Tự nhập...</option>
+                        </select>
+                        <div id="custom-time-wrapper" class="custom-time-wrapper hidden">
+                            <input type="number" id="input-custom-time" class="custom-time-input"
+                                min="10" max="3600" placeholder="Nhập giây (10-3600)" autocomplete="off">
+                            <span class="custom-time-unit">giây</span>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- 10x10 Setup Grid -->
