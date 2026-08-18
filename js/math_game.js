@@ -12,7 +12,7 @@ class MathGameEngine {
         this.myRole = 'p1'; // 'p1' or 'p2'
         
         this.timeLimit = 200; // Default 200s (shared timer)
-        this.sharedTimeLeft = 200; // <<< SINGLE SHARED COUNTDOWN TIMER
+        this.sharedTimeLeft = 200; // Single shared countdown timer
         
         this.p1Score = 0;
         this.p2Score = 0;
@@ -41,64 +41,66 @@ class MathGameEngine {
         this.timerInterval = null;
     }
 
-    // Generate clean math expression for a given target number N (1 to 100)
+    // Generate math expression for a given target number N (1-100)
+    // ALL operands guaranteed to stay within 1-100 range
     generateMathExprFor(targetNum) {
-        const types = ['add', 'sub', 'mul', 'div', 'mixed'];
-        const chosenType = types[Math.floor(Math.random() * types.length)];
+        const candidates = [];
 
-        let exprStr = '';
+        // --- Addition: a + b = targetNum, both a,b in [1,99] ---
+        if (targetNum >= 2) {
+            const a = Math.floor(Math.random() * (targetNum - 1)) + 1; // 1..targetNum-1
+            const b = targetNum - a; // also 1..targetNum-1
+            candidates.push(`${a} + ${b}`);
+        }
 
-        if (chosenType === 'add') {
-            const a = Math.floor(Math.random() * (targetNum - 1)) + 1;
-            const b = targetNum - a;
-            exprStr = `${a} + ${b}`;
-        } else if (chosenType === 'sub') {
-            const b = Math.floor(Math.random() * 30) + 1;
-            const a = targetNum + b;
-            exprStr = `${a} - ${b}`;
-        } else if (chosenType === 'mul') {
-            const factors = [];
-            for (let i = 1; i <= Math.sqrt(targetNum); i++) {
-                if (targetNum % i === 0) factors.push(i);
+        // --- Subtraction: a - b = targetNum, a <= 100, b >= 1 ---
+        // a = targetNum + b, need a <= 100, so b <= 100 - targetNum
+        if (100 - targetNum >= 1) {
+            const maxB = 100 - targetNum;
+            const b = Math.floor(Math.random() * maxB) + 1; // 1..maxB
+            const a = targetNum + b; // guaranteed <= 100
+            candidates.push(`${a} - ${b}`);
+        }
+
+        // --- Multiplication: a × b = targetNum, both a,b in [1,100] ---
+        const factors = [];
+        for (let i = 1; i <= Math.sqrt(targetNum); i++) {
+            if (targetNum % i === 0) {
+                const j = targetNum / i;
+                if (i >= 1 && j <= 100) factors.push([i, j]);
             }
-            if (factors.length > 1) {
-                const a = factors[Math.floor(Math.random() * (factors.length - 1)) + 1];
-                const b = targetNum / a;
-                exprStr = `${a} × ${b}`;
-            } else {
-                const a = Math.floor(Math.random() * (targetNum - 1)) + 1;
-                exprStr = `${a} + ${targetNum - a}`;
-            }
-        } else if (chosenType === 'div') {
-            const k = Math.floor(Math.random() * 4) + 2; // multiplier 2..5
-            const a = targetNum * k;
-            exprStr = `${a} ÷ ${k}`;
-        } else {
-            // Mixed: a * b + c = targetNum
-            if (targetNum > 5) {
-                const c = Math.floor(Math.random() * (targetNum - 4)) + 1;
-                const rem = targetNum - c;
-                const factors = [];
-                for (let i = 1; i <= Math.sqrt(rem); i++) {
-                    if (rem % i === 0) factors.push(i);
-                }
-                const a = factors[factors.length - 1];
-                const b = rem / a;
-                exprStr = `${a} × ${b} + ${c}`;
-            } else {
-                exprStr = `1 + ${targetNum - 1}`;
+        }
+        if (factors.length > 0) {
+            const [a, b] = factors[Math.floor(Math.random() * factors.length)];
+            if (a !== 1 || b !== 1) { // avoid "1 × N" if possible
+                candidates.push(`${a} × ${b}`);
             }
         }
 
-        return {
-            targetNum,
-            expr: exprStr
-        };
+        // --- Division: a ÷ k = targetNum, a = targetNum*k <= 100 ---
+        const divPairs = [];
+        for (let k = 2; k <= 10; k++) {
+            const a = targetNum * k;
+            if (a <= 100) divPairs.push([a, k]);
+        }
+        if (divPairs.length > 0) {
+            const [a, k] = divPairs[Math.floor(Math.random() * divPairs.length)];
+            candidates.push(`${a} ÷ ${k}`);
+        }
+
+        // Pick a random candidate expression
+        if (candidates.length === 0) {
+            // Fallback safe addition
+            const a = Math.max(1, targetNum - 1);
+            return { targetNum, expr: `${a} + ${targetNum - a}` };
+        }
+
+        const expr = candidates[Math.floor(Math.random() * candidates.length)];
+        return { targetNum, expr };
     }
 
-    // Generate random 100 math items for numbers 1 to 100
+    // Generate a shuffled 100-cell board (numbers 1-100, each with a unique math expr)
     generateRandom100Board() {
-        const board = [];
         const nums = Array.from({ length: 100 }, (_, i) => i + 1);
         
         // Fisher-Yates shuffle
@@ -107,14 +109,19 @@ class MathGameEngine {
             [nums[i], nums[j]] = [nums[j], nums[i]];
         }
 
-        nums.forEach(n => {
-            board.push(this.generateMathExprFor(n));
-        });
-
-        return board;
+        return nums.map(n => this.generateMathExprFor(n));
     }
 
-    // Smart Fill for 10x10 board: Keeps manual entries, fills missing 1-100 randomly
+    // Restore board from serialized data (used when host syncs board to guest)
+    boardFromJSON(jsonArr) {
+        if (!Array.isArray(jsonArr) || jsonArr.length !== 100) return null;
+        return jsonArr.map(cell => ({
+            targetNum: cell.targetNum,
+            expr: cell.expr
+        }));
+    }
+
+    // Smart Fill: Keeps manual entries, fills remaining slots randomly (within 1-100)
     fillRemainingRandomly100(currentBoard) {
         if (!Array.isArray(currentBoard) || currentBoard.length !== 100) {
             return this.generateRandom100Board();
@@ -123,9 +130,7 @@ class MathGameEngine {
         const assignedNums = new Set(currentBoard.filter(c => c !== null).map(c => c.targetNum));
         const unassignedNums = [];
         for (let i = 1; i <= 100; i++) {
-            if (!assignedNums.has(i)) {
-                unassignedNums.push(i);
-            }
+            if (!assignedNums.has(i)) unassignedNums.push(i);
         }
 
         // Shuffle missing numbers
@@ -136,9 +141,7 @@ class MathGameEngine {
 
         let uIdx = 0;
         return currentBoard.map(cell => {
-            if (cell !== null && cell.targetNum >= 1 && cell.targetNum <= 100) {
-                return cell;
-            }
+            if (cell !== null && cell.targetNum >= 1 && cell.targetNum <= 100) return cell;
             return this.generateMathExprFor(unassignedNums[uIdx++]);
         });
     }
@@ -151,7 +154,6 @@ class MathGameEngine {
         this.currentTargetNum = number;
         this.currentPhase = 'FIND';
         
-        // Record into history
         if (!this.promptHistory.includes(number)) {
             this.promptHistory.push(number);
         }
@@ -167,7 +169,6 @@ class MathGameEngine {
         if (!cell) return false;
 
         if (cell.targetNum === this.currentTargetNum) {
-            // Correct match found! Reset wrong click streak
             this.wrongClickStreak = 0;
 
             this.markedCells.set(cellIndex, playerRole);
@@ -176,7 +177,7 @@ class MathGameEngine {
             if (playerRole === 'p1') this.p1Score++;
             else this.p2Score++;
 
-            // Switch turn: Defender now becomes Attacker
+            // Switch turn: Defender becomes Attacker
             this.currentAttacker = playerRole;
             this.currentDefender = playerRole === 'p1' ? 'p2' : 'p1';
             this.currentPhase = 'PROMPT';
@@ -184,33 +185,22 @@ class MathGameEngine {
 
             return { success: true, cellIndex, playerRole, isComplete: this.foundNumbers.size === 100 };
         } else {
-            // Wrong click! Increment wrong streak
             this.wrongClickStreak++;
             return { success: false, wrongStreak: this.wrongClickStreak };
         }
     }
 
-    // Evaluate Win Condition (based on shared timer & score comparison)
+    // Evaluate Win Condition (shared timer + score comparison)
     checkWinCondition() {
-        // Shared timer ran out → compare scores
         if (this.sharedTimeLeft <= 0) {
-            if (this.p1Score > this.p2Score) {
-                return this.myRole === 'p1' ? 'my_win' : 'opp_win';
-            }
-            if (this.p2Score > this.p1Score) {
-                return this.myRole === 'p2' ? 'my_win' : 'opp_win';
-            }
+            if (this.p1Score > this.p2Score) return this.myRole === 'p1' ? 'my_win' : 'opp_win';
+            if (this.p2Score > this.p1Score) return this.myRole === 'p2' ? 'my_win' : 'opp_win';
             return 'draw';
         }
 
-        // All 100 numbers found → compare scores
         if (this.foundNumbers.size >= 100) {
-            if (this.p1Score > this.p2Score) {
-                return this.myRole === 'p1' ? 'my_win' : 'opp_win';
-            }
-            if (this.p2Score > this.p1Score) {
-                return this.myRole === 'p2' ? 'my_win' : 'opp_win';
-            }
+            if (this.p1Score > this.p2Score) return this.myRole === 'p1' ? 'my_win' : 'opp_win';
+            if (this.p2Score > this.p1Score) return this.myRole === 'p2' ? 'my_win' : 'opp_win';
             return 'draw';
         }
 
@@ -220,7 +210,6 @@ class MathGameEngine {
     // AI Bot Search Logic for Game 2
     getBestBotChoiceForTarget(targetNum) {
         if (!this.myBoard || this.myBoard.includes(null)) return -1;
-        // Find exact cell index containing targetNum
         return this.myBoard.findIndex(cell => cell && cell.targetNum === targetNum);
     }
 }

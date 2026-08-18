@@ -483,9 +483,13 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.btnReadyMath.innerText = 'ĐÃ SẴN SÀNG ✓';
 
             if (mathGameEngine.mode === 'online') {
+                // Host sends its board to guest so both use the SAME board
                 peerManager.sendData({
                     type: 'GAME2_PLAYER_READY',
-                    payload: { timeLimit: mathGameEngine.timeLimit }
+                    payload: {
+                        timeLimit: mathGameEngine.timeLimit,
+                        sharedBoard: peerManager.isHost ? mathGameEngine.myBoard : null
+                    }
                 });
             }
 
@@ -1280,17 +1284,44 @@ document.addEventListener('DOMContentLoaded', () => {
             checkBothReadyToStart();
         } else if (type === 'GAME2_PLAYER_READY') {
             mathGameEngine.oppReady = true;
+            if (payload.timeLimit) mathGameEngine.timeLimit = payload.timeLimit;
+
+            // If guest received host's board → apply as shared board
+            if (payload.sharedBoard && !peerManager.isHost) {
+                const syncedBoard = mathGameEngine.boardFromJSON(payload.sharedBoard);
+                if (syncedBoard) {
+                    mathGameEngine.myBoard = syncedBoard;
+                    showToast('✅ Đã đồng bộ bảng phép tính từ Host! Cả 2 dùng bảng giống nhau.');
+                }
+            } else if (!payload.sharedBoard && peerManager.isHost) {
+                // Guest is ready → Host sends its own board back to guest
+                peerManager.sendData({
+                    type: 'GAME2_SYNC_BOARD',
+                    payload: { sharedBoard: mathGameEngine.myBoard, timeLimit: mathGameEngine.timeLimit }
+                });
+            }
+
             showToast('Đối thủ đã sẵn sàng Trò 2!');
             checkMathBothReadyToStart();
+        } else if (type === 'GAME2_SYNC_BOARD') {
+            // Host sent the shared board to guest
+            if (!peerManager.isHost && payload.sharedBoard) {
+                const syncedBoard = mathGameEngine.boardFromJSON(payload.sharedBoard);
+                if (syncedBoard) {
+                    mathGameEngine.myBoard = syncedBoard;
+                    showToast('✅ Bảng phép tính đã được đồng bộ!');
+                }
+            }
+            if (payload.timeLimit) mathGameEngine.timeLimit = payload.timeLimit;
         } else if (type === 'GAME2_PROMPT_TARGET') {
             soundEngine.playReady();
             mathGameEngine.setPromptTarget(payload.targetNum);
             updateMathUI();
-            startMathTimerLoop();
+            // Note: shared timer runs continuously, no restart needed here
             showToast(`Đối thủ vừa đố số [ ${payload.targetNum} ]! Tìm ngay trên lưới 10x10!`);
         } else if (type === 'GAME2_CELL_FOUND') {
             soundEngine.playMarkNumber();
-            if (mathGameEngine.timerInterval) clearInterval(mathGameEngine.timerInterval);
+            // Note: shared timer continues running after a cell is found
             mathGameEngine.selectCell(payload.cellIndex, payload.role);
             renderMathGameplayBoard();
             updateMathUI();
