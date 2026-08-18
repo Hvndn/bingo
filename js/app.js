@@ -55,6 +55,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         gameplayBoard: document.getElementById('gameplay-board'),
         linesSvg: document.getElementById('lines-svg'),
+        inputCallNumber: document.getElementById('input-call-number'),
+        btnCallNumber: document.getElementById('btn-call-number'),
         emoteButtons: document.querySelectorAll('.btn-emote'),
         floatingEmotesContainer: document.getElementById('floating-emotes'),
 
@@ -271,6 +273,17 @@ document.addEventListener('DOMContentLoaded', () => {
             startMatch();
         });
 
+        // Manual Number Calling
+        elements.btnCallNumber.addEventListener('click', () => {
+            submitManualCallNumber();
+        });
+
+        elements.inputCallNumber.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                submitManualCallNumber();
+            }
+        });
+
         // Setup Board Controls
         elements.btnAutoFill.addEventListener('click', () => {
             soundEngine.playClick();
@@ -480,6 +493,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
             elements.gameplayBoard.appendChild(cell);
         });
+    }
+
+    // Submit Manual Number Call
+    function submitManualCallNumber() {
+        const val = parseInt(elements.inputCallNumber.value.trim());
+        if (isNaN(val) || val < 1 || val > 25) {
+            soundEngine.playClick();
+            showToast('Vui lòng nhập số hợp lệ từ 1 đến 25!');
+            return;
+        }
+
+        if (bingoEngine.markedNumbers.has(val)) {
+            soundEngine.playClick();
+            showToast(`Số ${val} đã được chọn trước đó rồi!`);
+            elements.inputCallNumber.value = '';
+            return;
+        }
+
+        handleCellClick(val);
+        elements.inputCallNumber.value = '';
     }
 
     // Cell Selection Handling
