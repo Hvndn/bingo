@@ -103,8 +103,6 @@ document.addEventListener('DOMContentLoaded', () => {
         viewSetupMath: document.getElementById('view-setup-math'),
         selectTimeLimit: document.getElementById('select-time-limit'),
         setupBoardMath: document.getElementById('setup-board-math'),
-        btnAutoFillMath: document.getElementById('btn-auto-fill-math'),
-        btnClearBoardMath: document.getElementById('btn-clear-board-math'),
         btnReadyMath: document.getElementById('btn-ready-math'),
 
         // Game 2 (Math Gameplay) Elements
