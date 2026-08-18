@@ -218,73 +218,91 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // Logo Click to Return to Lobby
-        elements.appLogo.addEventListener('click', () => {
-            soundEngine.playClick();
-            if (bingoEngine.gameStarted && !bingoEngine.gameOver) {
-                if (confirm('Bạn đang trong trận đấu! Bạn có chắc chắn muốn rời bàn đấu để về Trang Chủ không?')) {
-                    if (bingoEngine.mode === 'online') peerManager.disconnect();
+        if (elements.appLogo) {
+            elements.appLogo.addEventListener('click', () => {
+                soundEngine.playClick();
+                if (bingoEngine.gameStarted && !bingoEngine.gameOver) {
+                    if (confirm('Bạn đang trong trận đấu! Bạn có chắc chắn muốn rời bàn đấu để về Trang Chủ không?')) {
+                        if (bingoEngine.mode === 'online') peerManager.disconnect();
+                        showView('lobby');
+                        showToast('Đã quay về Trang Chủ');
+                    }
+                } else if (mathGameEngine.gameStarted && !mathGameEngine.gameOver) {
+                    if (confirm('Bạn đang trong ván đố số! Bạn có chắc chắn muốn rời bàn đấu để về Trang Chủ không?')) {
+                        if (mathGameEngine.timerInterval) clearInterval(mathGameEngine.timerInterval);
+                        if (mathGameEngine.mode === 'online') peerManager.disconnect();
+                        showView('lobby');
+                        showToast('Đã quay về Trang Chủ');
+                    }
+                } else {
+                    if (bingoEngine.mode === 'online' || mathGameEngine.mode === 'online') {
+                        peerManager.disconnect();
+                    }
                     showView('lobby');
-                    showToast('Đã quay về Trang Chủ');
                 }
-            } else if (mathGameEngine.gameStarted && !mathGameEngine.gameOver) {
-                if (confirm('Bạn đang trong ván đố số! Bạn có chắc chắn muốn rời bàn đấu để về Trang Chủ không?')) {
-                    if (mathGameEngine.timerInterval) clearInterval(mathGameEngine.timerInterval);
-                    if (mathGameEngine.mode === 'online') peerManager.disconnect();
-                    showView('lobby');
-                    showToast('Đã quay về Trang Chủ');
-                }
-            } else {
-                if (bingoEngine.mode === 'online' || mathGameEngine.mode === 'online') {
-                    peerManager.disconnect();
-                }
-                showView('lobby');
-            }
-        });
+            });
+        }
 
         // Sound & Theme & Rules & History
-        elements.btnHistory.addEventListener('click', () => {
-            soundEngine.playClick();
-            elements.modalHistory.classList.remove('hidden');
-            fetchMatchHistory();
-        });
+        if (elements.btnHistory) {
+            elements.btnHistory.addEventListener('click', () => {
+                soundEngine.playClick();
+                if (elements.modalHistory) elements.modalHistory.classList.remove('hidden');
+                fetchMatchHistory();
+            });
+        }
 
-        elements.btnCloseHistory.addEventListener('click', () => {
-            soundEngine.playClick();
-            elements.modalHistory.classList.add('hidden');
-        });
+        if (elements.btnCloseHistory) {
+            elements.btnCloseHistory.addEventListener('click', () => {
+                soundEngine.playClick();
+                if (elements.modalHistory) elements.modalHistory.classList.add('hidden');
+            });
+        }
 
-        elements.btnTheme.addEventListener('click', () => {
-            soundEngine.playClick();
-            toggleTheme();
-        });
+        if (elements.btnTheme) {
+            elements.btnTheme.addEventListener('click', () => {
+                soundEngine.playClick();
+                toggleTheme();
+            });
+        }
 
-        elements.btnSound.addEventListener('click', () => {
-            const muted = soundEngine.toggleMute();
-            updateSoundButtonUI();
-            showToast(muted ? 'Đã tắt âm thanh' : 'Đã bật âm thanh');
-        });
+        if (elements.btnSound) {
+            elements.btnSound.addEventListener('click', () => {
+                const muted = soundEngine.toggleMute();
+                updateSoundButtonUI();
+                showToast(muted ? 'Đã tắt âm thanh' : 'Đã bật âm thanh');
+            });
+        }
 
-        elements.btnInfo.addEventListener('click', () => {
-            soundEngine.playClick();
-            elements.modalRules.classList.remove('hidden');
-        });
+        if (elements.btnInfo) {
+            elements.btnInfo.addEventListener('click', () => {
+                soundEngine.playClick();
+                if (elements.modalRules) elements.modalRules.classList.remove('hidden');
+            });
+        }
 
-        elements.btnCloseRules.addEventListener('click', () => {
-            soundEngine.playClick();
-            elements.modalRules.classList.add('hidden');
-        });
+        if (elements.btnCloseRules) {
+            elements.btnCloseRules.addEventListener('click', () => {
+                soundEngine.playClick();
+                if (elements.modalRules) elements.modalRules.classList.add('hidden');
+            });
+        }
 
         // Quick Matrix 100 Modal Handlers
-        elements.btnOpenMatrix.addEventListener('click', () => {
-            soundEngine.playClick();
-            elements.modalMatrix100.classList.remove('hidden');
-            renderMatrixGrid100();
-        });
+        if (elements.btnOpenMatrix) {
+            elements.btnOpenMatrix.addEventListener('click', () => {
+                soundEngine.playClick();
+                if (elements.modalMatrix100) elements.modalMatrix100.classList.remove('hidden');
+                renderMatrixGrid100();
+            });
+        }
 
-        elements.btnCloseMatrix.addEventListener('click', () => {
-            soundEngine.playClick();
-            elements.modalMatrix100.classList.add('hidden');
-        });
+        if (elements.btnCloseMatrix) {
+            elements.btnCloseMatrix.addEventListener('click', () => {
+                soundEngine.playClick();
+                if (elements.modalMatrix100) elements.modalMatrix100.classList.add('hidden');
+            });
+        }
 
         // Mode Tabs
         elements.modeTabs.forEach(tab => {
