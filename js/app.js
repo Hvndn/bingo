@@ -684,7 +684,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Shared Countdown Timer Loop for Game 2
+    // Shared Countdown Timer Loop for Game 2 (Chỉ chạy khi đối phương đang TÌM số)
     function startMathTimerLoop() {
         if (mathGameEngine.timerInterval) {
             clearInterval(mathGameEngine.timerInterval);
@@ -692,6 +692,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         mathGameEngine.timerInterval = setInterval(() => {
             if (!mathGameEngine.gameStarted || mathGameEngine.gameOver) {
+                return;
+            }
+
+            // Chỉ đếm ngược khi đang trong pha FIND (có số đố và đối phương đang tìm)
+            if (mathGameEngine.currentPhase !== 'FIND') {
                 return;
             }
 
