@@ -1,0 +1,12 @@
+# Node dependencies
+node_modules/
+npm-debug.log*
+
+# Database & Runtime data
+history.json
+bingo_history.db
+*.log
+
+# Antigravity IDE / Gemini system files
+.gemini/
+.agent/logs/

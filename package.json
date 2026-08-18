@@ -1,0 +1,26 @@
+{
+  "name": "neon-bingo-2p",
+  "version": "1.0.0",
+  "description": "Fullstack 2-Player Online Bingo Web Application with Node.js Express REST API and SQLite Database",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "bingo",
+    "game",
+    "webrtc",
+    "peerjs",
+    "express",
+    "sqlite",
+    "fullstack"
+  ],
+  "author": "Antigravity IDE",
+  "license": "MIT",
+  "dependencies": {
+    "better-sqlite3": "^11.8.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.2"
+  }
+}

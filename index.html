@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NEON BINGO 2P - Game Bingo Online 2 Người</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;900&family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- PeerJS CDN & Canvas Confetti CDN -->
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-background">
+        <div class="glow-orb orb-1"></div>
+        <div class="glow-orb orb-2"></div>
+        <div class="glow-orb orb-3"></div>
+        <div class="grid-overlay"></div>
+    </div>
+
+    <!-- Floating Emote Container -->
+    <div id="floating-emotes" class="floating-emotes-container"></div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo">
+                <i class="fa-solid fa-gamepad logo-icon"></i>
+                <span class="logo-text">NEON <span class="highlight">BINGO</span> 2P</span>
+            </div>
+            <div class="header-actions">
+                <button id="btn-history" class="icon-btn" title="Xem Lịch Sử Đấu">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                </button>
+                <button id="btn-theme" class="icon-btn" title="Đổi Giao diện Sáng/Tối">
+                    <i class="fa-solid fa-sun"></i>
+                </button>
+                <button id="btn-sound" class="icon-btn" title="Bật/Tắt Âm thanh">
+                    <i class="fa-solid fa-volume-high"></i>
+                </button>
+                <button id="btn-info" class="icon-btn" title="Hướng dẫn luật chơi">
+                    <i class="fa-solid fa-circle-question"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- View 1: Sảnh Ghép Trận (Lobby) -->
+        <main id="view-lobby" class="view-panel active">
+            <div class="lobby-card glass-panel">
+                <div class="hero-badge">
+                    <i class="fa-solid fa-bolt"></i> MULTIPLAYER REALTIME
+                </div>
+                <h1 class="hero-title">ĐẤU TRƯỜNG BINGO</h1>
+                <p class="hero-subtitle">Thi đấu 2 người thời gian thực. Điền số từ 1-25, gọi số và tạo 5 hàng Bingo để giành chiến thắng!</p>
+
+                <!-- Game Mode Selector -->
+                <div class="mode-tabs">
+                    <button class="mode-tab active" data-mode="online">
+                        <i class="fa-solid fa-globe"></i> Chơi Online (2 Máy)
+                    </button>
+                    <button class="mode-tab" data-mode="ai">
+                        <i class="fa-solid fa-robot"></i> Đấu Với Bot AI
+                    </button>
+                    <button class="mode-tab" data-mode="local">
+                        <i class="fa-solid fa-users"></i> Pass & Play (Chung màn)
+                    </button>
+                </div>
+
+                <!-- Online Matchmaking Box -->
+                <div id="online-controls" class="mode-content active">
+                    <div class="action-grid">
+                        <!-- Create Room -->
+                        <div class="action-box create-box">
+                            <i class="fa-solid fa-plus-circle box-icon"></i>
+                            <h3>Tạo Phòng Mới</h3>
+                            <p>Tạo mã phòng ngẫu nhiên và gửi cho bạn bè để thách đấu</p>
+                            <button id="btn-create-room" class="btn btn-primary btn-glow">
+                                <i class="fa-solid fa-tower-broadcast"></i> Tạo Phòng Đấu
+                            </button>
+                        </div>
+
+                        <div class="divider"><span>HOẶC</span></div>
+
+                        <!-- Join Room -->
+                        <div class="action-box join-box">
+                            <i class="fa-solid fa-right-to-bracket box-icon"></i>
+                            <h3>Nhập Mã Phòng</h3>
+                            <p>Dán mã phòng 6 ký tự được chia sẻ từ bạn bè</p>
+                            <div class="join-input-group">
+                                <input type="text" id="input-room-code" placeholder="VD: BNG-8X92" maxlength="10" autocomplete="off">
+                                <button id="btn-join-room" class="btn btn-secondary">
+                                    <i class="fa-solid fa-arrow-right"></i> Vào Phòng
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Room Modal / Info Box when Room Created -->
+                    <div id="room-created-info" class="room-info-card hidden">
+                        <div class="status-indicator">
+                            <span class="pulse-dot"></span>
+                            <span id="connection-status-text">Đang chờ đối thủ tham gia...</span>
+                        </div>
+                        <div class="code-display-box">
+                            <span class="code-label">MÃ PHÒNG CỦA BẠN:</span>
+                            <div class="code-value-wrapper">
+                                <span id="display-room-code" class="code-value">---</span>
+                                <button id="btn-copy-code" class="btn btn-sm btn-icon-text" title="Sao chép">
+                                    <i class="fa-solid fa-copy"></i> Copy
+                                </button>
+                            </div>
+                        </div>
+                        <button id="btn-cancel-room" class="btn btn-outline btn-sm">
+                            <i class="fa-solid fa-xmark"></i> Hủy Phòng
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Bot Mode Box -->
+                <div id="ai-controls" class="mode-content">
+                    <div class="ai-select-card">
+                        <h3><i class="fa-solid fa-robot"></i> Luyện tập với Bot AI</h3>
+                        <p>Kiểm tra kỹ năng của bạn với trí tuệ nhân tạo. Máy sẽ tự động xếp số và chọn nước đi thông minh!</p>
+                        <button id="btn-start-ai" class="btn btn-primary btn-glow">
+                            <i class="fa-solid fa-play"></i> Bắt Đầu Ngay
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Pass & Play Box -->
+                <div id="local-controls" class="mode-content">
+                    <div class="local-select-card">
+                        <h3><i class="fa-solid fa-mobile-screen-button"></i> 2 Người chung 1 thiết bị</h3>
+                        <p>Thay phiên nhau xếp bàn số và truyền tay nhau thiết bị để đấu trực tiếp!</p>
+                        <button id="btn-start-local" class="btn btn-primary btn-glow">
+                            <i class="fa-solid fa-users"></i> Bắt Đầu Chơi Local
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- View 2: Chuẩn Bị Bàn Số (Board Setup) -->
+        <main id="view-setup" class="view-panel">
+            <div class="setup-container glass-panel">
+                <div class="setup-header">
+                    <h2><i class="fa-solid fa-table-cells"></i> XẾP BÀN SỐ CỦA BẠN</h2>
+                    <p class="setup-subtitle">Điền đủ 25 số từ 1 đến 25 hoặc bấm nút xếp ngẫu nhiên.</p>
+                </div>
+
+                <!-- Opponent Status Badge -->
+                <div id="opponent-setup-badge" class="opponent-badge">
+                    <i class="fa-solid fa-spinner fa-spin"></i>
+                    <span id="opponent-setup-text">Đối phương đang xếp số...</span>
+                </div>
+
+                <!-- 5x5 Setup Grid -->
+                <div class="board-wrapper">
+                    <div id="setup-board" class="bingo-grid setup-grid">
+                        <!-- 25 Cells generated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Setup Action Buttons -->
+                <div class="setup-actions">
+                    <button id="btn-auto-fill" class="btn btn-secondary">
+                        <i class="fa-solid fa-shuffle"></i> Ngẫu Nhiên
+                    </button>
+                    <button id="btn-clear-board" class="btn btn-outline">
+                        <i class="fa-solid fa-trash-can"></i> Xóa Hết
+                    </button>
+                    <button id="btn-ready" class="btn btn-primary btn-glow" disabled>
+                        <i class="fa-solid fa-check-circle"></i> SẴN SÀNG CHƠI
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <!-- View 3: Màn Hình Thi Đấu (Gameplay) -->
+        <main id="view-gameplay" class="view-panel">
+            <div class="gameplay-container">
+                <!-- Status Top Bar -->
+                <div class="status-bar glass-panel">
+                    <div class="player-info p1-info">
+                        <div class="player-avatar p1-avatar"><i class="fa-solid fa-user"></i></div>
+                        <div class="player-details">
+                            <span class="player-name" id="p1-name">BẠN</span>
+                            <span class="player-tag">PLAYER 1</span>
+                        </div>
+                    </div>
+
+                    <!-- Turn Indicator Badge -->
+                    <div id="turn-indicator" class="turn-badge your-turn">
+                        <i class="fa-solid fa-circle-dot"></i>
+                        <span id="turn-text">LƯỢT CỦA BẠN</span>
+                    </div>
+
+                    <div class="player-info p2-info">
+                        <div class="player-details align-right">
+                            <span class="player-name" id="p2-name">ĐỐI THỦ</span>
+                            <span class="player-tag">PLAYER 2</span>
+                        </div>
+                        <div class="player-avatar p2-avatar"><i class="fa-solid fa-user-astronaut"></i></div>
+                    </div>
+                </div>
+
+                <!-- B-I-N-G-O Line Score Trackers -->
+                <div class="bingo-score-board glass-panel">
+                    <!-- Player 1 Bingo Tracker -->
+                    <div class="bingo-tracker p1-tracker">
+                        <span class="tracker-label">Hàng của bạn:</span>
+                        <div class="bingo-letters" id="p1-bingo-letters">
+                            <span class="letter" data-letter="B">B</span>
+                            <span class="letter" data-letter="I">I</span>
+                            <span class="letter" data-letter="N">N</span>
+                            <span class="letter" data-letter="G">G</span>
+                            <span class="letter" data-letter="O">O</span>
+                        </div>
+                        <span class="count-badge" id="p1-line-count">0/5</span>
+                    </div>
+
+                    <div class="vs-divider">VS</div>
+
+                    <!-- Player 2 Bingo Tracker -->
+                    <div class="bingo-tracker p2-tracker">
+                        <span class="tracker-label">Đối thủ:</span>
+                        <div class="bingo-letters" id="p2-bingo-letters">
+                            <span class="letter" data-letter="B">B</span>
+                            <span class="letter" data-letter="I">I</span>
+                            <span class="letter" data-letter="N">N</span>
+                            <span class="letter" data-letter="G">G</span>
+                            <span class="letter" data-letter="O">O</span>
+                        </div>
+                        <span class="count-badge" id="p2-line-count">0/5</span>
+                    </div>
+                </div>
+
+                <!-- Main Game Board 5x5 -->
+                <div class="board-wrapper gameplay-board-wrapper">
+                    <div id="gameplay-board" class="bingo-grid play-grid">
+                        <!-- 25 Cells generated dynamically -->
+                    </div>
+                    <!-- SVG Overlay for striking completed lines -->
+                    <svg id="lines-svg" class="lines-overlay" viewBox="0 0 500 500"></svg>
+                </div>
+
+                <!-- Action Bar & Emotes -->
+                <div class="gameplay-bottom-bar glass-panel">
+                    <div class="emotes-bar">
+                        <span class="emotes-title"><i class="fa-solid fa-face-smile"></i> Thả Cảm Xúc:</span>
+                        <div class="emote-buttons">
+                            <button class="btn-emote" data-emote="👋">👋</button>
+                            <button class="btn-emote" data-emote="😂">😂</button>
+                            <button class="btn-emote" data-emote="🔥">🔥</button>
+                            <button class="btn-emote" data-emote="😱">😱</button>
+                            <button class="btn-emote" data-emote="🏆">🏆</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Modal: Game Over / Victory / Defeat -->
+        <div id="modal-gameover" class="modal-overlay hidden">
+            <div class="modal-content glass-panel animated-modal">
+                <div id="winner-icon-wrapper" class="modal-icon">
+                    <i class="fa-solid fa-trophy trophy-glow"></i>
+                </div>
+                <h1 id="modal-title" class="modal-title">BẠN ĐÃ CHIẾN THẮNG!</h1>
+                <p id="modal-desc" class="modal-desc">Bạn đã hoàn thành 5 hàng Bingo trước đối thủ!</p>
+
+                <div class="stats-summary">
+                    <div class="stat-box">
+                        <span class="stat-num" id="stat-p1-lines">5</span>
+                        <span class="stat-lbl">Hàng BẠN làm</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-num" id="stat-p2-lines">3</span>
+                        <span class="stat-lbl">Hàng ĐỐI THỦ làm</span>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button id="btn-rematch" class="btn btn-primary btn-glow">
+                        <i class="fa-solid fa-rotate-right"></i> Tái Đấu
+                    </button>
+                    <button id="btn-back-lobby" class="btn btn-outline">
+                        <i class="fa-solid fa-house"></i> Về Sảnh Chính
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Match History -->
+        <div id="modal-history" class="modal-overlay hidden">
+            <div class="modal-content glass-panel history-modal">
+                <div class="modal-header">
+                    <h2><i class="fa-solid fa-clock-rotate-left"></i> Lịch Sử Trận Đấu</h2>
+                    <button id="btn-close-history" class="icon-btn"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="stats-bar-summary">
+                    <div class="stat-pill"><span class="lbl">Tổng trận:</span> <strong id="hist-stat-total">0</strong></div>
+                    <div class="stat-pill"><span class="lbl">Bạn thắng:</span> <strong id="hist-stat-wins">0</strong></div>
+                </div>
+                <div id="history-list" class="history-list-container">
+                    <div class="loading-history"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Game Rules Info -->
+        <div id="modal-rules" class="modal-overlay hidden">
+            <div class="modal-content glass-panel">
+                <div class="modal-header">
+                    <h2><i class="fa-solid fa-book-open"></i> Luật Chơi Bingo 2 Người</h2>
+                    <button id="btn-close-rules" class="icon-btn"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="rules-body">
+                    <ol class="rules-list">
+                        <li><strong>Bước 1: Xếp số</strong> — Mỗi người chơi điền các số từ 1 đến 25 vào lưới 5x5 của riêng mình.</li>
+                        <li><strong>Bước 2: Gọi số theo lượt</strong> — Khi đến lượt bạn, hãy nhấp chọn 1 số chưa được tô màu.</li>
+                        <li><strong>Bước 3: Tô màu đồng bộ</strong> — Số vừa được chọn sẽ tự động tô màu đánh dấu trên bàn chơi của <strong>CẢ 2 NGƯỜI CHƠI</strong>.</li>
+                        <li><strong>Bước 4: Tạo hàng Bingo</strong> — Một hàng ngang, hàng dọc hoặc đường chéo có đủ 5 số tô màu sẽ tính là 1 hàng Bingo. Mỗi hàng hoàn thành sẽ làm sáng 1 chữ cái trong <strong>B - I - N - G - O</strong>.</li>
+                        <li><strong>Bước 5: Chiến thắng</strong> — Người đầu tiên tích đủ 5 hàng Bingo (sáng trọn bộ chữ B-I-N-G-O) sẽ dành chiến thắng!</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Notifications -->
+        <div id="toast-container" class="toast-container"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/sound.js"></script>
+    <script src="js/peer.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
