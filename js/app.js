@@ -75,11 +75,29 @@ document.addEventListener('DOMContentLoaded', () => {
         modalRules: document.getElementById('modal-rules'),
         btnCloseRules: document.getElementById('btn-close-rules'),
 
-        modalHistory: document.getElementById('modal-history'),
-        btnCloseHistory: document.getElementById('btn-close-history'),
-        historyList: document.getElementById('history-list'),
-        histStatTotal: document.getElementById('hist-stat-total'),
-        histStatWins: document.getElementById('hist-stat-wins'),
+        // Game Switcher Tabs
+        gameSwitcherBtns: document.querySelectorAll('.game-switcher-btn'),
+
+        // Game 2 (Math Setup) Elements
+        viewSetupMath: document.getElementById('view-setup-math'),
+        selectTimeLimit: document.getElementById('select-time-limit'),
+        setupBoardMath: document.getElementById('setup-board-math'),
+        btnAutoFillMath: document.getElementById('btn-auto-fill-math'),
+        btnClearBoardMath: document.getElementById('btn-clear-board-math'),
+        btnReadyMath: document.getElementById('btn-ready-math'),
+
+        // Game 2 (Math Gameplay) Elements
+        viewGameplayMath: document.getElementById('view-gameplay-math'),
+        mathP1Name: document.getElementById('math-p1-name'),
+        mathP2Name: document.getElementById('math-p2-name'),
+        p1TimerText: document.getElementById('p1-timer-text'),
+        p2TimerText: document.getElementById('p2-timer-text'),
+        p1ClockBadge: document.getElementById('p1-clock-badge'),
+        p2ClockBadge: document.getElementById('p2-clock-badge'),
+        p1ScoreText: document.getElementById('p1-score-text'),
+        p2ScoreText: document.getElementById('p2-score-text'),
+        promptBanner: document.getElementById('prompt-banner'),
+        gameplayBoardMath: document.getElementById('gameplay-board-math'),
         
         toastContainer: document.getElementById('toast-container')
     };
@@ -121,10 +139,14 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.viewLobby.classList.remove('active');
         elements.viewSetup.classList.remove('active');
         elements.viewGameplay.classList.remove('active');
+        if (elements.viewSetupMath) elements.viewSetupMath.classList.remove('active');
+        if (elements.viewGameplayMath) elements.viewGameplayMath.classList.remove('active');
 
         if (viewName === 'lobby') elements.viewLobby.classList.add('active');
         if (viewName === 'setup') elements.viewSetup.classList.add('active');
         if (viewName === 'gameplay') elements.viewGameplay.classList.add('active');
+        if (viewName === 'setup-math') elements.viewSetupMath.classList.add('active');
+        if (viewName === 'gameplay-math') elements.viewGameplayMath.classList.add('active');
     }
 
     // Toast Notification Helper
@@ -146,6 +168,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Event Bindings
     function bindEvents() {
+        // Game Switcher Tabs
+        elements.gameSwitcherBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                soundEngine.playClick();
+                elements.gameSwitcherBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentGame = btn.dataset.game;
+                showToast(currentGame === 'bingo' ? 'Đã chọn Trò 1: Neon Bingo' : 'Đã chọn Trò 2: Tìm Số Phép Tính');
+            });
+        });
+
         // Sound & Theme & Rules & History
         elements.btnHistory.addEventListener('click', () => {
             soundEngine.playClick();
@@ -245,35 +278,53 @@ document.addEventListener('DOMContentLoaded', () => {
         // Start AI Practice Mode
         elements.btnStartAi.addEventListener('click', () => {
             soundEngine.playClick();
-            bingoEngine.resetState();
-            bingoEngine.mode = 'ai';
-            bingoEngine.myRole = 'p1';
-            bingoEngine.oppBoard = bingoEngine.generateRandomBoard();
-            bingoEngine.oppReady = true;
-
-            elements.p1Name.innerText = 'BẠN';
-            elements.p2Name.innerText = 'BOT AI';
-
-            prepareSetupBoard();
+            if (currentGame === 'math') {
+                mathGameEngine.resetState();
+                mathGameEngine.mode = 'ai';
+                mathGameEngine.myRole = 'p1';
+                mathGameEngine.oppBoard = mathGameEngine.generateRandom100Board();
+                mathGameEngine.oppReady = true;
+                elements.mathP1Name.innerText = 'BẠN';
+                elements.mathP2Name.innerText = 'BOT AI';
+                prepareMathSetupBoard();
+            } else {
+                bingoEngine.resetState();
+                bingoEngine.mode = 'ai';
+                bingoEngine.myRole = 'p1';
+                bingoEngine.oppBoard = bingoEngine.generateRandomBoard();
+                bingoEngine.oppReady = true;
+                elements.p1Name.innerText = 'BẠN';
+                elements.p2Name.innerText = 'BOT AI';
+                prepareSetupBoard();
+            }
         });
 
         // Start Local Pass & Play Mode
         elements.btnStartLocal.addEventListener('click', () => {
             soundEngine.playClick();
-            bingoEngine.resetState();
-            bingoEngine.mode = 'local';
-            bingoEngine.myRole = 'p1';
-
-            elements.p1Name.innerText = 'PLAYER 1';
-            elements.p2Name.innerText = 'PLAYER 2';
-
-            // Random boards for quick local play
-            bingoEngine.myBoard = bingoEngine.generateRandomBoard();
-            bingoEngine.oppBoard = bingoEngine.generateRandomBoard();
-            bingoEngine.myReady = true;
-            bingoEngine.oppReady = true;
-
-            startMatch();
+            if (currentGame === 'math') {
+                mathGameEngine.resetState();
+                mathGameEngine.mode = 'local';
+                mathGameEngine.myRole = 'p1';
+                mathGameEngine.myBoard = mathGameEngine.generateRandom100Board();
+                mathGameEngine.oppBoard = mathGameEngine.generateRandom100Board();
+                mathGameEngine.myReady = true;
+                mathGameEngine.oppReady = true;
+                elements.mathP1Name.innerText = 'PLAYER 1';
+                elements.mathP2Name.innerText = 'PLAYER 2';
+                startMathMatch();
+            } else {
+                bingoEngine.resetState();
+                bingoEngine.mode = 'local';
+                bingoEngine.myRole = 'p1';
+                bingoEngine.myBoard = bingoEngine.generateRandomBoard();
+                bingoEngine.oppBoard = bingoEngine.generateRandomBoard();
+                bingoEngine.myReady = true;
+                bingoEngine.oppReady = true;
+                elements.p1Name.innerText = 'PLAYER 1';
+                elements.p2Name.innerText = 'PLAYER 2';
+                startMatch();
+            }
         });
 
         // Manual Number Calling
@@ -292,7 +343,309 @@ document.addEventListener('DOMContentLoaded', () => {
             claimBingoVictory();
         });
 
-        // Setup Board Controls
+        // Prepare Math Game Setup Phase
+    function prepareMathSetupBoard() {
+        showView('setup-math');
+        mathGameEngine.myBoard = mathGameEngine.generateRandom100Board();
+        renderMathSetupBoard();
+        checkMathSetupReadyState();
+
+        elements.selectTimeLimit.value = mathGameEngine.timeLimit.toString();
+        elements.selectTimeLimit.onchange = () => {
+            mathGameEngine.timeLimit = parseInt(elements.selectTimeLimit.value);
+        };
+
+        elements.btnAutoFillMath.onclick = () => {
+            soundEngine.playClick();
+            mathGameEngine.myBoard = mathGameEngine.fillRemainingRandomly100(mathGameEngine.myBoard);
+            renderMathSetupBoard();
+            checkMathSetupReadyState();
+        };
+
+        elements.btnClearBoardMath.onclick = () => {
+            soundEngine.playClick();
+            mathGameEngine.myBoard = new Array(100).fill(null);
+            renderMathSetupBoard();
+            checkMathSetupReadyState();
+        };
+
+        elements.btnReadyMath.onclick = () => {
+            soundEngine.playReady();
+            mathGameEngine.myReady = true;
+            elements.btnReadyMath.disabled = true;
+            elements.btnReadyMath.innerText = 'ĐÃ SẴN SÀNG ✓';
+
+            if (mathGameEngine.mode === 'online') {
+                peerManager.sendData({
+                    type: 'GAME2_PLAYER_READY',
+                    payload: { timeLimit: mathGameEngine.timeLimit }
+                });
+            }
+
+            checkMathBothReadyToStart();
+        };
+    }
+
+    function renderMathSetupBoard() {
+        elements.setupBoardMath.innerHTML = '';
+        mathGameEngine.myBoard.forEach((cell, index) => {
+            const cellEl = document.createElement('div');
+            cellEl.className = `math-cell ${cell ? 'filled' : ''}`;
+            cellEl.innerText = cell ? cell.expr : '';
+            
+            cellEl.onclick = () => {
+                soundEngine.playClick();
+                fillNextAvailableMathCell(index);
+            };
+
+            elements.setupBoardMath.appendChild(cellEl);
+        });
+    }
+
+    function fillNextAvailableMathCell(index) {
+        if (mathGameEngine.myBoard[index]) {
+            mathGameEngine.myBoard[index] = null;
+        } else {
+            const assigned = new Set(mathGameEngine.myBoard.filter(c => c).map(c => c.targetNum));
+            for (let i = 1; i <= 100; i++) {
+                if (!assigned.has(i)) {
+                    mathGameEngine.myBoard[index] = mathGameEngine.generateMathExprFor(i);
+                    break;
+                }
+            }
+        }
+        renderMathSetupBoard();
+        checkMathSetupReadyState();
+    }
+
+    function checkMathSetupReadyState() {
+        const isValid = Array.isArray(mathGameEngine.myBoard) && mathGameEngine.myBoard.filter(c => c !== null).length === 100;
+        elements.btnReadyMath.disabled = !isValid || mathGameEngine.myReady;
+    }
+
+    function checkMathBothReadyToStart() {
+        if (mathGameEngine.myReady && mathGameEngine.oppReady) {
+            startMathMatch();
+        }
+    }
+
+    // Start Math Match
+    function startMathMatch() {
+        mathGameEngine.gameStarted = true;
+        mathGameEngine.p1TimeLeft = mathGameEngine.timeLimit;
+        mathGameEngine.p2TimeLeft = mathGameEngine.timeLimit;
+        mathGameEngine.currentPhase = 'PROMPT';
+        mathGameEngine.currentAttacker = 'p1';
+        mathGameEngine.currentDefender = 'p2';
+
+        showView('gameplay-math');
+        renderMathGameplayBoard();
+        updateMathUI();
+    }
+
+    // Render Math 10x10 Gameplay Grid
+    function renderMathGameplayBoard() {
+        elements.gameplayBoardMath.innerHTML = '';
+        mathGameEngine.myBoard.forEach((cell, index) => {
+            const cellEl = document.createElement('div');
+            const markRole = mathGameEngine.markedCells.get(index);
+
+            cellEl.className = `math-cell ${markRole ? `marked-${markRole}` : ''}`;
+            cellEl.innerText = cell ? cell.expr : '';
+
+            cellEl.onclick = () => {
+                handleMathCellClick(index);
+            };
+
+            elements.gameplayBoardMath.appendChild(cellEl);
+        });
+    }
+
+    // Update Math UI & Clocks
+    function updateMathUI() {
+        elements.p1TimerText.innerText = `${mathGameEngine.p1TimeLeft}s`;
+        elements.p2TimerText.innerText = `${mathGameEngine.p2TimeLeft}s`;
+        elements.p1ScoreText.innerText = `ĐIỂM: ${mathGameEngine.p1Score}`;
+        elements.p2ScoreText.innerText = `ĐIỂM: ${mathGameEngine.p2Score}`;
+
+        // Clock active highlighting
+        if (mathGameEngine.currentPhase === 'FIND') {
+            if (mathGameEngine.currentDefender === 'p1') {
+                elements.p1ClockBadge.classList.add('clock-active');
+                elements.p2ClockBadge.classList.remove('clock-active');
+            } else {
+                elements.p2ClockBadge.classList.add('clock-active');
+                elements.p1ClockBadge.classList.remove('clock-active');
+            }
+        } else {
+            elements.p1ClockBadge.classList.remove('clock-active');
+            elements.p2ClockBadge.classList.remove('clock-active');
+        }
+
+        // Prompt Banner Update
+        if (mathGameEngine.currentPhase === 'PROMPT') {
+            const isMyPrompt = mathGameEngine.currentAttacker === mathGameEngine.myRole;
+            if (isMyPrompt) {
+                elements.promptBanner.innerHTML = `
+                    <div class="prompt-title"><i class="fa-solid fa-bullhorn"></i> NHẬP SỐ CẦN ĐỐ ĐỐI THỦ (1-100):</div>
+                    <div class="prompt-input-group">
+                        <input type="number" id="input-target-prompt" min="1" max="100" placeholder="1-100" autocomplete="off">
+                        <button id="btn-send-prompt" class="btn btn-primary btn-sm"><i class="fa-solid fa-paper-plane"></i> Đố Số</button>
+                    </div>
+                `;
+
+                const btnSend = document.getElementById('btn-send-prompt');
+                const inputPrompt = document.getElementById('input-target-prompt');
+
+                const submitPrompt = () => {
+                    const val = parseInt(inputPrompt.value.trim());
+                    if (isNaN(val) || val < 1 || val > 100) {
+                        showToast('Vui lòng nhập số đố từ 1 đến 100!');
+                        return;
+                    }
+                    if (mathGameEngine.foundNumbers.has(val)) {
+                        showToast(`Số ${val} đã được tìm thấy trước đó rồi!`);
+                        return;
+                    }
+
+                    soundEngine.playClick();
+                    mathGameEngine.setPromptTarget(val);
+
+                    if (mathGameEngine.mode === 'online') {
+                        peerManager.sendData({
+                            type: 'GAME2_PROMPT_TARGET',
+                            payload: { targetNum: val }
+                        });
+                    }
+
+                    updateMathUI();
+                    startMathTimerLoop();
+
+                    // If AI mode and Bot is defender, Bot searches
+                    if (mathGameEngine.mode === 'ai' && mathGameEngine.currentDefender === 'p2') {
+                        triggerBotSearch(val);
+                    }
+                };
+
+                btnSend.onclick = submitPrompt;
+                inputPrompt.onkeypress = (e) => { if (e.key === 'Enter') submitPrompt(); };
+            } else {
+                elements.promptBanner.innerHTML = `
+                    <div class="prompt-title"><i class="fa-solid fa-spinner fa-spin"></i> ĐANG CHỜ ĐỐI THỦ NHẬP SỐ ĐỐ...</div>
+                `;
+            }
+        } else if (mathGameEngine.currentPhase === 'FIND') {
+            const isMyFind = mathGameEngine.currentDefender === mathGameEngine.myRole;
+            if (isMyFind) {
+                elements.promptBanner.innerHTML = `
+                    <div class="prompt-title">⚡ HÃY TÌM PHÉP TÍNH CÓ KẾT QUẢ BẰNG:</div>
+                    <div class="prompt-target-display">[ ${mathGameEngine.currentTargetNum} ]</div>
+                `;
+            } else {
+                elements.promptBanner.innerHTML = `
+                    <div class="prompt-title">⏳ ĐỐI THỦ ĐANG TÌM PHÉP TÍNH BẰNG [ ${mathGameEngine.currentTargetNum} ]...</div>
+                `;
+            }
+        }
+    }
+
+    // Countdown Timer Loop for Game 2
+    function startMathTimerLoop() {
+        if (mathGameEngine.timerInterval) {
+            clearInterval(mathGameEngine.timerInterval);
+        }
+
+        mathGameEngine.timerInterval = setInterval(() => {
+            if (!mathGameEngine.gameStarted || mathGameEngine.gameOver || mathGameEngine.currentPhase !== 'FIND') {
+                return;
+            }
+
+            if (mathGameEngine.currentDefender === 'p1') {
+                mathGameEngine.p1TimeLeft--;
+            } else {
+                mathGameEngine.p2TimeLeft--;
+            }
+
+            elements.p1TimerText.innerText = `${mathGameEngine.p1TimeLeft}s`;
+            elements.p2TimerText.innerText = `${mathGameEngine.p2TimeLeft}s`;
+
+            // Check Win/Loss by Time Expiration
+            const winRes = mathGameEngine.checkWinCondition();
+            if (winRes) {
+                clearInterval(mathGameEngine.timerInterval);
+                mathGameEngine.gameOver = true;
+                showGameOverModal(winRes, mathGameEngine.p1Score, mathGameEngine.p2Score);
+            }
+        }, 1000);
+    }
+
+    // Handle Cell Selection in Game 2
+    function handleMathCellClick(cellIndex) {
+        if (mathGameEngine.currentPhase !== 'FIND' || mathGameEngine.gameOver) return;
+        if (mathGameEngine.currentDefender !== mathGameEngine.myRole) {
+            showToast('Đang là lượt đố/tìm của đối thủ!');
+            return;
+        }
+
+        const res = mathGameEngine.selectCell(cellIndex, mathGameEngine.myRole);
+        if (res.success) {
+            soundEngine.playLineComplete();
+            if (mathGameEngine.timerInterval) clearInterval(mathGameEngine.timerInterval);
+
+            renderMathGameplayBoard();
+            updateMathUI();
+
+            if (mathGameEngine.mode === 'online') {
+                peerManager.sendData({
+                    type: 'GAME2_CELL_FOUND',
+                    payload: { cellIndex, role: mathGameEngine.myRole, targetNum: mathGameEngine.currentTargetNum }
+                });
+            }
+
+            showToast(`🎉 Chính xác! Ô phép tính = ${mathGameEngine.currentTargetNum}. +1 Điểm!`);
+
+            // If AI Mode and Bot is attacker now, Bot prompts
+            if (mathGameEngine.mode === 'ai' && mathGameEngine.currentAttacker === 'p2' && !mathGameEngine.gameOver) {
+                triggerBotPrompt();
+            }
+        } else {
+            soundEngine.playClick();
+            const cell = mathGameEngine.myBoard[cellIndex];
+            showToast(`Phép tính "${cell.expr}" có kết quả = ${cell.targetNum}, không phải ${mathGameEngine.currentTargetNum}! Tìm tiếp nào!`);
+        }
+    }
+
+    // Bot AI for Game 2
+    function triggerBotPrompt() {
+        setTimeout(() => {
+            if (mathGameEngine.gameOver) return;
+            const unfound = [];
+            for (let i = 1; i <= 100; i++) {
+                if (!mathGameEngine.foundNumbers.has(i)) unfound.push(i);
+            }
+            if (unfound.length > 0) {
+                const botPrompt = unfound[Math.floor(Math.random() * unfound.length)];
+                mathGameEngine.setPromptTarget(botPrompt);
+                updateMathUI();
+                startMathTimerLoop();
+            }
+        }, 1200);
+    }
+
+    function triggerBotSearch(targetNum) {
+        setTimeout(() => {
+            if (mathGameEngine.gameOver || mathGameEngine.currentPhase !== 'FIND') return;
+            const botCellIdx = mathGameEngine.getBestBotChoiceForTarget(targetNum);
+            if (botCellIdx >= 0) {
+                mathGameEngine.selectCell(botCellIdx, 'p2');
+                if (mathGameEngine.timerInterval) clearInterval(mathGameEngine.timerInterval);
+                renderMathGameplayBoard();
+                updateMathUI();
+                soundEngine.playMarkNumber();
+                showToast(`Bot AI đã tìm thấy phép tính cho số ${targetNum}! Lượt của bạn đố số!`);
+            }
+        }, 3000);
+    }
         elements.btnAutoFill.addEventListener('click', () => {
             soundEngine.playClick();
             // Preserves manually picked numbers, fills remaining empty slots randomly
@@ -741,6 +1094,23 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.opponentSetupText.innerText = 'Đối phương đã sẵn sàng!';
             showToast('Đối thủ đã chuẩn bị xong bàn số!');
             checkBothReadyToStart();
+        } else if (type === 'GAME2_PLAYER_READY') {
+            mathGameEngine.oppReady = true;
+            showToast('Đối thủ đã sẵn sàng Trò 2!');
+            checkMathBothReadyToStart();
+        } else if (type === 'GAME2_PROMPT_TARGET') {
+            soundEngine.playReady();
+            mathGameEngine.setPromptTarget(payload.targetNum);
+            updateMathUI();
+            startMathTimerLoop();
+            showToast(`Đối thủ vừa đố số [ ${payload.targetNum} ]! Tìm ngay trên lưới 10x10!`);
+        } else if (type === 'GAME2_CELL_FOUND') {
+            soundEngine.playMarkNumber();
+            if (mathGameEngine.timerInterval) clearInterval(mathGameEngine.timerInterval);
+            mathGameEngine.selectCell(payload.cellIndex, payload.role);
+            renderMathGameplayBoard();
+            updateMathUI();
+            showToast(`Đối thủ đã tìm thấy phép tính cho số ${payload.targetNum}! Lượt bạn đố số!`);
         } else if (type === 'SELECT_NUMBER') {
             executeMove(payload.number);
         } else if (type === 'BINGO_CLAIM') {

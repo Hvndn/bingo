@@ -56,6 +56,16 @@
         <!-- View 1: Sảnh Ghép Trận (Lobby) -->
         <main id="view-lobby" class="view-panel active">
             <div class="lobby-card glass-panel">
+                <!-- Game Selector Hub -->
+                <div class="game-switcher-tabs">
+                    <button class="game-switcher-btn active" data-game="bingo">
+                        <i class="fa-solid fa-dice"></i> Trò 1: Neon Bingo
+                    </button>
+                    <button class="game-switcher-btn" data-game="math">
+                        <i class="fa-solid fa-calculator"></i> Trò 2: Tìm Số Phép Tính
+                    </button>
+                </div>
+
                 <div class="hero-badge">
                     <i class="fa-solid fa-bolt"></i> MULTIPLAYER REALTIME
                 </div>
@@ -254,6 +264,84 @@
                     <svg id="lines-svg" class="lines-overlay" viewBox="0 0 500 500"></svg>
                 </div>
 
+                <!-- View 4: Chuẩn Bị Bàn Phép Tính 10x10 (Math Setup) -->
+        <main id="view-setup-math" class="view-panel">
+            <div class="setup-container glass-panel">
+                <div class="setup-header">
+                    <h2><i class="fa-solid fa-calculator"></i> TRÒ 2: XẾP BÀN 100 PHÉP TÍNH (10x10)</h2>
+                    <p class="setup-subtitle">Bàn 10x10 chứa 100 phép tính toán học tương ứng với các số từ 1 đến 100.</p>
+                </div>
+
+                <!-- Time Limit Selector -->
+                <div class="time-limit-box">
+                    <span class="time-label"><i class="fa-solid fa-stopwatch"></i> Quỹ thời gian thi đấu:</span>
+                    <select id="select-time-limit" class="time-select">
+                        <option value="100">100 Giây</option>
+                        <option value="200" selected>200 Giây</option>
+                        <option value="300">300 Giây</option>
+                        <option value="400">400 Giây</option>
+                        <option value="500">500 Giây</option>
+                    </select>
+                </div>
+
+                <!-- 10x10 Setup Grid -->
+                <div class="board-wrapper-10x10">
+                    <div id="setup-board-math" class="math-grid setup-math-grid">
+                        <!-- 100 Cells generated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Setup Action Buttons -->
+                <div class="setup-actions">
+                    <button id="btn-auto-fill-math" class="btn btn-secondary">
+                        <i class="fa-solid fa-shuffle"></i> Ngẫu Nhiên
+                    </button>
+                    <button id="btn-clear-board-math" class="btn btn-outline">
+                        <i class="fa-solid fa-trash-can"></i> Xóa Hết
+                    </button>
+                    <button id="btn-ready-math" class="btn btn-primary btn-glow">
+                        <i class="fa-solid fa-check-circle"></i> SẴN SÀNG CHƠI
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <!-- View 5: Màn Hình Thi Đấu Trò 2 (Math Gameplay) -->
+        <main id="view-gameplay-math" class="view-panel">
+            <div class="gameplay-container">
+                <!-- Status Top Bar with Countdown Clocks -->
+                <div class="status-bar glass-panel math-status-bar">
+                    <div class="player-math-info p1-math">
+                        <span class="p-name" id="math-p1-name">BẠN</span>
+                        <div class="clock-badge p1-clock" id="p1-clock-badge">
+                            <i class="fa-solid fa-clock"></i> <span id="p1-timer-text">200s</span>
+                        </div>
+                        <span class="score-badge" id="p1-score-text">ĐIỂM: 0</span>
+                    </div>
+
+                    <div class="math-vs">VS</div>
+
+                    <div class="player-math-info p2-math">
+                        <span class="p-name" id="math-p2-name">ĐỐI THỦ</span>
+                        <div class="clock-badge p2-clock" id="p2-clock-badge">
+                            <i class="fa-solid fa-clock"></i> <span id="p2-timer-text">200s</span>
+                        </div>
+                        <span class="score-badge" id="p2-score-text">ĐIỂM: 0</span>
+                    </div>
+                </div>
+
+                <!-- Target Prompt Bar -->
+                <div class="prompt-banner glass-panel" id="prompt-banner">
+                    <!-- Dynamic Attacker Input or Defender Search Prompt -->
+                </div>
+
+                <!-- Main Game Board 10x10 -->
+                <div class="board-wrapper-10x10">
+                    <div id="gameplay-board-math" class="math-grid play-math-grid">
+                        <!-- 100 Cells generated dynamically -->
+                    </div>
+                </div>
+
                 <!-- Action Bar & Emotes -->
                 <div class="gameplay-bottom-bar glass-panel">
                     <div class="emotes-bar">
@@ -364,6 +452,7 @@
     <script src="js/sound.js"></script>
     <script src="js/peer.js"></script>
     <script src="js/game.js"></script>
+    <script src="js/math_game.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>

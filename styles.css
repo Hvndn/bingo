@@ -1177,6 +1177,273 @@ body {
     box-shadow: 0 0 8px var(--primary-glow);
 }
 
+/* Game Switcher Hub */
+.game-switcher-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    background: var(--grid-bg);
+    padding: 6px;
+    border-radius: 14px;
+    border: 1px solid var(--border-glass);
+}
+
+.game-switcher-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 0.85rem;
+    padding: 10px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: var(--transition-bounce);
+}
+
+.game-switcher-btn.active {
+    background: var(--bg-card);
+    color: var(--primary-cyan);
+    box-shadow: var(--shadow-panel);
+    border: 1px solid var(--primary-cyan);
+}
+
+/* Time Limit Selector Box */
+.time-limit-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    background: var(--grid-bg);
+    padding: 10px 16px;
+    border-radius: 12px;
+    border: 1px solid var(--border-glass);
+}
+
+.time-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.time-select {
+    background: var(--bg-card);
+    border: 1px solid var(--primary-cyan);
+    color: var(--primary-cyan);
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 0.9rem;
+    padding: 6px 12px;
+    border-radius: 8px;
+    outline: none;
+    cursor: pointer;
+}
+
+/* 10x10 Grid Layout */
+.board-wrapper-10x10 {
+    position: relative;
+    width: 100%;
+    max-width: 520px;
+    margin: 0 auto 20px auto;
+    aspect-ratio: 1 / 1;
+}
+
+.math-grid {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    grid-template-rows: repeat(10, 1fr);
+    gap: 4px;
+    width: 100%;
+    height: 100%;
+}
+
+.math-cell {
+    background: var(--cell-bg);
+    border: 1px solid var(--cell-border);
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 0.72rem;
+    color: var(--cell-text);
+    box-shadow: var(--cell-shadow);
+    cursor: pointer;
+    transition: var(--transition-bounce);
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+    padding: 2px;
+}
+
+.setup-math-grid .math-cell:hover {
+    border-color: var(--primary-cyan);
+    background: rgba(2, 132, 199, 0.12);
+    transform: scale(1.08);
+}
+
+.play-math-grid .math-cell:hover:not(.marked-p1):not(.marked-p2) {
+    border-color: var(--accent-magenta);
+    background: rgba(225, 29, 72, 0.12);
+    transform: scale(1.08);
+}
+
+/* Circle Mark Styles for Found Math Cells */
+.math-cell.marked-p1 {
+    background: rgba(22, 163, 74, 0.2);
+    border-color: var(--neon-green);
+    color: var(--neon-green);
+}
+
+.math-cell.marked-p1::after {
+    content: '';
+    position: absolute;
+    width: 85%;
+    height: 85%;
+    border: 3px solid var(--neon-green);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--neon-green);
+    animation: circlePop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.math-cell.marked-p2 {
+    background: rgba(225, 29, 72, 0.2);
+    border-color: var(--accent-magenta);
+    color: var(--accent-magenta);
+}
+
+.math-cell.marked-p2::after {
+    content: '';
+    position: absolute;
+    width: 85%;
+    height: 85%;
+    border: 3px solid var(--accent-magenta);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--accent-magenta);
+    animation: circlePop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes circlePop {
+    from { transform: scale(0.3); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+/* Math Status Bar & Clocks */
+.math-status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+}
+
+.player-math-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.p-name {
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 0.85rem;
+}
+
+.clock-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    background: var(--grid-bg);
+    border: 1px solid var(--border-glass);
+    font-family: var(--font-heading);
+    font-weight: 900;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-muted);
+}
+
+.clock-badge.clock-active {
+    background: rgba(225, 29, 72, 0.15);
+    border-color: var(--accent-magenta);
+    color: var(--accent-magenta);
+    box-shadow: 0 0 15px var(--magenta-glow);
+    animation: clockTick 1s infinite alternate;
+}
+
+@keyframes clockTick {
+    from { opacity: 0.8; }
+    to { opacity: 1; transform: scale(1.04); }
+}
+
+.score-badge {
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 0.8rem;
+    color: var(--gold-yellow);
+}
+
+.math-vs {
+    font-family: var(--font-heading);
+    font-weight: 900;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    opacity: 0.6;
+}
+
+/* Prompt Banner */
+.prompt-banner {
+    padding: 12px 16px;
+    margin-bottom: 14px;
+    text-align: center;
+    border: 1px solid var(--primary-cyan);
+    background: rgba(2, 132, 199, 0.08);
+}
+
+.prompt-title {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+
+.prompt-target-display {
+    font-family: var(--font-heading);
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: var(--gold-yellow);
+    letter-spacing: 1px;
+}
+
+.prompt-input-group {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    max-width: 280px;
+    margin: 0 auto;
+}
+
+.prompt-input-group input {
+    flex: 1;
+    background: var(--grid-bg);
+    border: 1px solid var(--primary-cyan);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: var(--text-main);
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 1.1rem;
+    text-align: center;
+    outline: none;
+}
+
 /* History Modal & Cards */
 .history-modal {
     max-width: 460px;
