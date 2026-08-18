@@ -412,9 +412,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 elements.p1Name.innerText = 'PLAYER 1';
                 elements.p2Name.innerText = 'PLAYER 2';
                 startMatch();
-            }
-        });
-
         // Manual Number Calling
         elements.btnCallNumber.addEventListener('click', () => {
             submitManualCallNumber();
@@ -438,24 +435,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const isOnlineGuest = mathGameEngine.mode === 'online' && !peerManager.isHost;
 
         if (isOnlineGuest) {
-            // Guest does NOT generate an independent board; requests Host board instead
-            if (!mathGameEngine.myBoard || mathGameEngine.myBoard.includes(null)) {
-                mathGameEngine.myBoard = new Array(100).fill(null);
-            }
-            // Request Host to send its current board
+            // Guest always receives board from Host
             peerManager.sendData({ type: 'GAME2_REQUEST_SYNC' });
-            
-            // Disable board edit buttons for Guest so Host controls the shared board
-            elements.btnAutoFillMath.style.display = 'none';
-            elements.btnClearBoardMath.style.display = 'none';
             elements.selectTimeLimit.disabled = true;
         } else {
-            // Host / Local / AI generates the initial board
+            // Host / Local / AI generates the single shared board if not generated yet
             if (!mathGameEngine.myBoard || mathGameEngine.myBoard.includes(null)) {
                 mathGameEngine.myBoard = mathGameEngine.generateRandom100Board();
             }
-            elements.btnAutoFillMath.style.display = 'inline-flex';
-            elements.btnClearBoardMath.style.display = 'inline-flex';
             elements.selectTimeLimit.disabled = false;
 
             // If Host in online mode, broadcast board to guest immediately
@@ -505,26 +492,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
-        elements.btnAutoFillMath.onclick = () => {
-            soundEngine.playClick();
-            mathGameEngine.myBoard = mathGameEngine.fillRemainingRandomly100(mathGameEngine.myBoard);
-            renderMathSetupBoard();
-            checkMathSetupReadyState();
-            if (peerManager.isHost && mathGameEngine.mode === 'online') {
-                peerManager.sendData({
-                    type: 'GAME2_SYNC_BOARD',
-                    payload: { sharedBoard: mathGameEngine.myBoard, timeLimit: mathGameEngine.timeLimit }
-                });
-            }
-        };
-
-        elements.btnClearBoardMath.onclick = () => {
-            soundEngine.playClick();
-            mathGameEngine.myBoard = new Array(100).fill(null);
-            renderMathSetupBoard();
-            checkMathSetupReadyState();
-        };
-
         elements.btnReadyMath.onclick = () => {
             soundEngine.playReady();
             mathGameEngine.myReady = true;
@@ -532,7 +499,6 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.btnReadyMath.innerText = 'ĐÃ SẴN SÀNG ✓';
 
             if (mathGameEngine.mode === 'online') {
-                // Host sends its board to guest so both use the SAME board
                 peerManager.sendData({
                     type: 'GAME2_PLAYER_READY',
                     payload: {
