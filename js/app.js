@@ -68,6 +68,10 @@ document.addEventListener('DOMContentLoaded', () => {
         btnRematch: document.getElementById('btn-rematch'),
         btnBackLobby: document.getElementById('btn-back-lobby'),
 
+        modalRematchOffer: document.getElementById('modal-rematch-offer'),
+        btnAcceptRematch: document.getElementById('btn-accept-rematch'),
+        btnDeclineRematch: document.getElementById('btn-decline-rematch'),
+
         modalRules: document.getElementById('modal-rules'),
         btnCloseRules: document.getElementById('btn-close-rules'),
 
@@ -291,7 +295,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Setup Board Controls
         elements.btnAutoFill.addEventListener('click', () => {
             soundEngine.playClick();
-            bingoEngine.myBoard = bingoEngine.generateRandomBoard();
+            // Preserves manually picked numbers, fills remaining empty slots randomly
+            bingoEngine.myBoard = bingoEngine.fillRemainingRandomly(bingoEngine.myBoard);
             renderSetupBoard();
             checkSetupReadyState();
         });
@@ -338,11 +343,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // Rematch & Back to Lobby
         elements.btnRematch.addEventListener('click', () => {
             soundEngine.playClick();
-            elements.modalGameOver.classList.add('hidden');
 
             if (bingoEngine.mode === 'online') {
                 peerManager.sendData({ type: 'REMATCH_OFFER' });
-                showToast('Đã gửi yêu cầu tái đấu tới đối thủ...');
+                elements.btnRematch.disabled = true;
+                elements.btnRematch.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang chờ đồng ý...';
+                showToast('Đã gửi lời mời Tái Đấu. Đang chờ đối thủ đồng ý...');
             } else if (bingoEngine.mode === 'ai') {
                 bingoEngine.resetState();
                 bingoEngine.mode = 'ai';
@@ -359,6 +365,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 bingoEngine.oppReady = true;
                 startMatch();
             }
+        });
+
+        // Rematch Offer Decision Handlers
+        elements.btnAcceptRematch.addEventListener('click', () => {
+            soundEngine.playReady();
+            elements.modalRematchOffer.classList.add('hidden');
+            peerManager.sendData({ type: 'REMATCH_ACCEPT' });
+            resetAndGoToSetup();
+        });
+
+        elements.btnDeclineRematch.addEventListener('click', () => {
+            soundEngine.playClick();
+            elements.modalRematchOffer.classList.add('hidden');
+            peerManager.sendData({ type: 'REMATCH_DECLINE' });
         });
 
         elements.btnBackLobby.addEventListener('click', () => {
@@ -692,6 +712,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Reset State and Prepare Setup View for Rematch
+    function resetAndGoToSetup() {
+        bingoEngine.markedNumbers = new Set();
+        bingoEngine.myReady = false;
+        bingoEngine.oppReady = false;
+        bingoEngine.gameStarted = false;
+        bingoEngine.gameOver = false;
+        bingoEngine.winner = null;
+
+        elements.btnRematch.disabled = false;
+        elements.btnRematch.innerHTML = '<i class="fa-solid fa-rotate-right"></i> Tái Đấu';
+        elements.btnReady.disabled = false;
+        elements.btnReady.innerText = 'SẴN SÀNG CHƠI';
+        elements.modalGameOver.classList.add('hidden');
+        elements.modalRematchOffer.classList.add('hidden');
+
+        prepareSetupBoard();
+    }
+
     // Handle incoming P2P data packets
     function handleP2PData(data) {
         const { type, payload } = data;
@@ -713,8 +752,17 @@ document.addEventListener('DOMContentLoaded', () => {
             soundEngine.playEmote();
             spawnFloatingEmote(payload.emote, false);
         } else if (type === 'REMATCH_OFFER') {
-            showToast('Đối thủ đề nghị tái đấu!');
             soundEngine.playReady();
+            elements.modalRematchOffer.classList.remove('hidden');
+        } else if (type === 'REMATCH_ACCEPT') {
+            soundEngine.playReady();
+            showToast('🎉 Đối thủ đã ĐỒNG Ý Tái Đấu! Chuyển sang màn chuẩn bị...');
+            resetAndGoToSetup();
+        } else if (type === 'REMATCH_DECLINE') {
+            soundEngine.playClick();
+            showToast('Đối thủ đã TỪ CHỐI Tái Đấu.');
+            elements.btnRematch.disabled = false;
+            elements.btnRematch.innerHTML = '<i class="fa-solid fa-rotate-right"></i> Tái Đấu';
         }
     }
 

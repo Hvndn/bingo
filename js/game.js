@@ -59,6 +59,41 @@ class BingoEngine {
         return nums;
     }
 
+    // Smart Fill: Preserves manually placed numbers, randomly fills remaining empty slots
+    fillRemainingRandomly(currentBoard) {
+        if (!Array.isArray(currentBoard) || currentBoard.length !== 25) {
+            return this.generateRandomBoard();
+        }
+
+        // Collect assigned numbers
+        const assignedNums = new Set(currentBoard.filter(n => n !== null && n >= 1 && n <= 25));
+        
+        // Collect missing numbers
+        const unassignedNums = [];
+        for (let i = 1; i <= 25; i++) {
+            if (!assignedNums.has(i)) {
+                unassignedNums.push(i);
+            }
+        }
+
+        // Shuffle missing numbers
+        for (let i = unassignedNums.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [unassignedNums[i], unassignedNums[j]] = [unassignedNums[j], unassignedNums[i]];
+        }
+
+        // Construct complete board
+        let unassignedIdx = 0;
+        const newBoard = currentBoard.map(cell => {
+            if (cell !== null && cell >= 1 && cell <= 25) {
+                return cell;
+            }
+            return unassignedNums[unassignedIdx++];
+        });
+
+        return newBoard;
+    }
+
     // Validate custom board setup (must contain exact 1-25 without duplicates)
     validateBoard(board) {
         if (!Array.isArray(board) || board.length !== 25) return false;
